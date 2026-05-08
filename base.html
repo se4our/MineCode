@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title if title else 'MineCode' }}</title>
+
+</head>
+<body class="{{ body_class or '' }}">
+    <div class="page-wrapper">
+        <header>
+            <nav class="navbar">
+                <a href="/" class="logo">MineCode</a>
+                <div class="nav-links">
+                    <a href="/">Главная</a>
+                    <a href="#">Теория</a>
+                    <a href="#">Практика</a>
+                    <a href="#">FAQ</a>
+                    <a href="#">Вход</a>
+                </div>
+            </nav>
+        </header>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p>Проект подготовлен: Лехнер А.А., Шишков А.Е., Шкаленов С.А.</p>
+                <p>© ИМИТ ИГУ 2026, Информационные системы и технологии</p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
