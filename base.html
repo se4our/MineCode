@@ -4,22 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title if title else 'MineCode' }}</title>
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="{{ body_class or '' }}">
+<body>
     <div class="page-wrapper">
         <header>
             <nav class="navbar">
                 <a href="/" class="logo">MineCode</a>
-                <div class="nav-links">
-                    <a href="/">Главная</a>
-                    <a href="#">Теория</a>
-                    <a href="#">Практика</a>
-                    <a href="#">FAQ</a>
-                    <a href="#">Вход</a>
-                </div>
             </nav>
         </header>
+
+        <main class="main-content">
+            <div class="main-background">
+                <img src="{{ url_for('static', filename='images/background.png') }}" alt="Minecraft background">
+            </div>
+
+            <div class="container">
+                <section class="hero">
+                    <h1>Изучите магию командных блоков Minecraft</h1>
+                    <p class="hero-description">
+                        Ванильный Minecraft скрывает огромный потенциал: десятки команд,
+                        механик выполнения и гибкая система тегов. Создавайте мини-игры,
+                        автоматизируйте процессы и меняйте облик игры — без единого мода.
+                    </p>
+                    <p class="hero-actuality">
+                        Команды и командные блоки активно применяются на серверах,
+                        в приключенческих картах и для обучения программированию.
+                        Станьте мастером Minecraft-логики!
+                    </p>
+                </section>
+
+                <section class="external-maps">
+                    <h2>Сайты с картами для Minecraft</h2>
+                    <div class="map-grid">
+                        <a href="https://www.planetminecraft.com/" target="_blank" class="map-card">
+                            <span class="map-icon">🌍</span>
+                            Planet Minecraft
+                        </a>
+                        <a href="https://www.minecraftmaps.com/" target="_blank" class="map-card">
+                            <span class="map-icon">🗺️</span>
+                            Minecraft Maps
+                        </a>
+                        <a href="https://mcpedl.com/" target="_blank" class="map-card">
+                            <span class="map-icon">📱</span>
+                            MCPEDL
+                        </a>
+                        <a href="https://www.curseforge.com/minecraft/worlds" target="_blank" class="map-card">
+                            <span class="map-icon">🔮</span>
+                            CurseForge
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </main>
 
         <footer class="footer">
             <div class="footer-content">
