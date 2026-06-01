@@ -309,3 +309,12 @@ h1, h2, h3 {
     text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
     color: #ffffff;
 }
+
+body.basic-bg {
+    background-image: url('../images/basic_bg.png');
+    background-size: auto;
+    background-repeat: repeat;
+    background-attachment: fixed;
+    background-position: top left;
+    background-color: #1a1a1a;
+}
