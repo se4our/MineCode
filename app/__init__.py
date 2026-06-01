@@ -5,7 +5,7 @@ from config import Config
 
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'login' 
+login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -21,22 +21,7 @@ def create_app():
     from app.routes import main
     app.register_blueprint(main)
 
-       with app.app_context():
+    with app.app_context():
         db.create_all()
 
     return app
-
-routes.py
-
-from flask import Blueprint, render_template
-
-main = Blueprint('main', __name__)
-
-@main.route('/')
-def index():
-    return render_template('index.html', title='MineCode - Главная')
-
-@main.route('/fundamentals')
-def fundamentals():
-    # Глубокая теория по устройству команд
-    return render_template('fundamentals.html', title='Теория команд Minecraft', body_class='basic-bg')
