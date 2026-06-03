@@ -20,10 +20,13 @@ class RegistrationForm(FlaskForm):
         if user:
             raise ValidationError('Этот email уже используется.')
 
-from wtforms import BooleanField
-
 class LoginForm(FlaskForm):
     username = StringField('Никнейм', validators=[DataRequired()])
     password = PasswordField('Пароль', validators=[DataRequired()])
-    remember_me = BooleanField('Запомнить меня')  # ← добавить
     submit = SubmitField('Войти')
+
+class TheorySectionForm(FlaskForm):
+    title = StringField('Заголовок', validators=[DataRequired(), Length(max=200)])
+    content = TextAreaField('Содержание', validators=[DataRequired()])
+    order = IntegerField('Порядок', default=0)
+    submit = SubmitField('Сохранить')
