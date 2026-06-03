@@ -1,7 +1,7 @@
 /* ========== ПОДКЛЮЧЕНИЕ ШРИФТА MINECRAFT ========== */
 @font-face {
     font-family: 'Minecraft';
-    src: url('../fonts/mac`s Minecraft.woff2') format('woff2');
+    src: url('../fonts/minecraft.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -13,9 +13,9 @@
     -moz-osx-font-smoothing: unset;
 }
 
-html {
+html, body {
     height: 100%;
-    font-size: 16px;
+    overflow-x: hidden;
 }
 
 body {
@@ -26,6 +26,7 @@ body {
     line-height: 1.8;
     letter-spacing: 0.6px;
     background-color: #1a1a1a;
+    background-image: none;
 }
 
 .page-wrapper {
@@ -42,24 +43,91 @@ body {
     z-index: 1;
 }
 
+/* Добавьте эти стили в style.css, если они отсутствуют */
+.floating-menu {
+    position: fixed;
+    top: 90px;
+    left: 20px;
+    z-index: 100;
+}
+
+.floating-menu-button {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: #6b4f32;
+    border: 2px solid #8b7355;
+    color: #f0e68c;
+    font-family: 'Minecraft', monospace;
+    font-size: 1.6em;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+    padding: 0;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+.floating-menu-button:hover {
+    background-color: #8b7355;
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background-color: rgba(30, 30, 30, 0.95);
+    border: 1px solid #6b4f32;
+    padding: 10px;
+}
+
+.menu-dropdown.show {
+    display: flex;
+}
+
+.menu-dropdown .btn {
+    display: block;
+    padding: 8px 14px;
+    font-size: 0.7em;
+    background-color: rgba(107, 79, 50, 0.9);
+    color: #f0e68c;
+    text-decoration: none;
+    border: 2px solid #8b7355;
+    text-align: center;
+    white-space: nowrap;
+    transition: background 0.3s;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+.menu-dropdown .btn:hover {
+    background-color: rgba(139, 115, 85, 1);
+}
+
+/* ========== ФОН ГЛАВНОЙ СТРАНИЦЫ ========== */
 .main-background {
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
     z-index: 0;
+    overflow: hidden;
 }
 .main-background img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: bottom;
-    transform: scale(1.05);
+    object-position: center;
     display: block;
 }
 
-/* Заголовки */
+/* ========== ЗАГОЛОВКИ ========== */
 h1, h2, h3 {
     font-family: 'Minecraft', monospace;
     text-transform: uppercase;
@@ -74,7 +142,7 @@ h1, h2, h3 {
     z-index: 2;
 }
 
-/* Навигация */
+/* ========== НАВИГАЦИЯ ========== */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -111,67 +179,7 @@ h1, h2, h3 {
     color: #ffffff;
 }
 
-/* Плавающее меню */
-.floating-menu {
-    position: fixed;
-    top: 90px;
-    left: 20px;
-    z-index: 100;
-}
-.floating-menu-button {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background-color: #6b4f32;
-    border: 2px solid #8b7355;
-    color: #f0e68c;
-    font-family: 'Minecraft', monospace;
-    font-size: 1.6em;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s;
-    padding: 0;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-}
-.floating-menu-button:hover {
-    background-color: #8b7355;
-}
-.menu-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 8px;
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    background-color: rgba(30, 30, 30, 0.95);
-    border: 1px solid #6b4f32;
-    padding: 10px;
-}
-.menu-dropdown.show {
-    display: flex;
-}
-.menu-dropdown .btn {
-    display: block;
-    padding: 8px 14px;
-    font-size: 0.7em;
-    background-color: rgba(107, 79, 50, 0.9);
-    color: #f0e68c;
-    text-decoration: none;
-    border: 2px solid #8b7355;
-    text-align: center;
-    white-space: nowrap;
-    transition: background 0.3s;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-}
-.menu-dropdown .btn:hover {
-    background-color: rgba(139, 115, 85, 1);
-}
-
-/* Hero секция */
+/* ========== HERO ========== */
 .hero {
     text-align: center;
     margin: 40px 0;
@@ -195,7 +203,7 @@ h1, h2, h3 {
     text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
 }
 
-/* История */
+/* ========== ИСТОРИЯ ВЕРСИЙ ========== */
 .history {
     margin: 40px 0;
 }
@@ -246,7 +254,7 @@ h1, h2, h3 {
     color: #ffd700;
 }
 
-/* Сетка карт */
+/* ========== СЕТКА КАРТ ========== */
 .external-maps {
     margin: 40px 0;
     background: rgba(0, 0, 0, 0.5);
@@ -285,11 +293,9 @@ h1, h2, h3 {
     border-color: #f0e68c;
     color: #f0e68c;
 }
-.map-icon {
-    font-size: 2em;
-}
+.map-icon { font-size: 2em; }
 
-/* Подвал */
+/* ========== ПОДВАЛ ========== */
 .footer {
     background-color: #3b2b1f;
     background-image: url('../images/dirt.png');
@@ -298,7 +304,7 @@ h1, h2, h3 {
     text-align: center;
     padding: 20px;
     border-top: 3px solid #6b4f32;
-    margin-top: 40px;
+    margin-top: 0;
     font-size: 0.8em;
     position: relative;
     z-index: 2;
@@ -310,11 +316,147 @@ h1, h2, h3 {
     color: #ffffff;
 }
 
-body.basic-bg {
+/* ========== ФОН ДЛЯ СТРАНИЦ ТЕОРИИ, ПРАКТИКИ, ТЕСТОВ ========== */
+body.theory-bg {
     background-image: url('../images/basic_bg.png');
-    background-size: auto;
-    background-repeat: repeat;
+    background-size: cover;
+    background-repeat: no-repeat;
     background-attachment: fixed;
-    background-position: top left;
+    background-position: center center;
     background-color: #1a1a1a;
 }
+
+/* ========== ТЕОРИЯ (fundamentals) ========== */
+.info-block {
+    margin-bottom: 25px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 15px;
+    border: 1px dashed #6b4f32;
+}
+
+/* ========== СТРАНИЦА ТЕОРИИ (СПРАВОЧНИК) ========== */
+.theory-page {
+    font-family: 'Minecraft', monospace;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.theory-title {
+    text-align: center;
+    font-size: 1.6em;
+    margin-bottom: 25px;
+}
+.theory-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+.search-input, .version-select {
+    font-family: 'Minecraft', monospace;
+    font-size: 0.75em;
+    padding: 12px;
+    background: #2a2a2a;
+    border: 2px solid #6b4f32;
+    color: #ffffff;
+    outline: none;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.search-input:focus, .version-select:focus { border-color: #f0e68c; }
+
+.commands-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.command-btn {
+    font-family: 'Minecraft', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px 6px;
+    background: rgba(107, 79, 50, 0.8);
+    border: 2px solid #8b7355;
+    color: #ffffff;
+    font-size: 0.75em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    word-break: break-word;
+}
+.command-btn:hover {
+    background: rgba(139, 115, 85, 0.9);
+    border-color: #f0e68c;
+}
+.version-badge {
+    font-size: 0.65em;
+    color: #d0c070;
+    margin-top: 4px;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.8);
+}
+.modal-content.dirt-bg {
+    background-color: #3b2b1f;
+    background-image: url('../images/dirt.png');
+    background-repeat: repeat;
+    margin: 10% auto;
+    padding: 25px;
+    border: 4px solid #6b4f32;
+    width: 80%;
+    max-width: 600px;
+    color: #ffffff;
+    font-family: 'Minecraft', monospace;
+    font-size: 0.75em;
+    line-height: 1.8;
+    box-shadow: 0 0 20px rgba(0,0,0,0.9);
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.modal-close {
+    float: right;
+    font-size: 2em;
+    cursor: pointer;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.modal-close:hover { color: #f0e68c; }
+.modal-content h3 { font-size: 1.1em; margin-top: 0; }
+.modal-content code {
+    background: rgba(0,0,0,0.6);
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.2em;
+    color: #ffd700;
+    word-break: break-word;
+}
+
+/* ========== СТРАНИЦЫ ОШИБОК ========== */
+.error-page {
+    max-width: 600px;
+    margin: 100px auto;
+    text-align: center;
+    font-family: 'Minecraft', monospace;
+    color: #fff;
+    text-shadow: 1px 1px 0 #000;
+}
+.error-page h1 { font-size: 4em; color: #f0e68c; }
+.return-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #6b4f32;
+    border: 2px solid #8b7355;
+    color: #f0e68c;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.return-btn:hover { background: #8b7355; }
