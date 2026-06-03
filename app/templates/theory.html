@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container theory-page">
+    <h2 class="theory-title">Справочник команд Minecraft</h2>
+
+    <div class="theory-controls">
+        <input type="text" id="searchInput" placeholder="Поиск команды..." class="search-input">
+        <select id="versionSelect" class="version-select">
+            <option value="all">Все версии</option>
+            <option value="1.3.1">1.3.1</option>
+            <option value="1.4.2">1.4.2</option>
+            <option value="1.5">1.5</option>
+            <option value="1.6.1">1.6.1</option>
+            <option value="1.7.2">1.7.2</option>
+            <option value="1.8">1.8</option>
+            <option value="1.9">1.9</option>
+            <option value="1.10">1.10</option>
+            <option value="1.11">1.11</option>
+            <option value="1.12">1.12</option>
+            <option value="1.13">1.13</option>
+            <option value="1.14">1.14</option>
+            <option value="1.15">1.15</option>
+            <option value="1.16">1.16</option>
+            <option value="1.17">1.17</option>
+            <option value="1.18">1.18</option>
+            <option value="1.19">1.19</option>
+            <option value="1.20">1.20</option>
+            <option value="1.21">1.21</option>
+        </select>
+    </div>
+
+    <div id="commandsList" class="commands-list"></div>
+
+    <!-- Модальное окно -->
+    <div id="commandModal" class="modal">
+        <div class="modal-content dirt-bg">
+            <span class="modal-close" id="modalClose">&times;</span>
+            <h3 id="modalCommandName"></h3>
+            <p><strong>Версия добавления:</strong> <span id="modalVersion"></span></p>
+            <div id="modalDescription"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================== ДАННЫЕ КОМАНД ==================
+    const commandsData = [
+        { name: "/advancement", version_added: "1.12", version_removed: null, description: "Управляет достижениями игрока: выдаёт, отзывает или проверяет прогресс по достижениям. Система достижений пришла на смену старой системе прогресса.", syntax: { "1.12": "/advancement (grant|revoke) <цель> (everything|from|only|through|until) [достижение] [критерий]" }, params: "grant — выдать, revoke — отозвать; цель — игрок; everything/from/only/through/until — режим выдачи; достижение — ID достижения." },
+        { name: "/attribute", version_added: "1.16", version_removed: null, description: "Позволяет читать, добавлять, удалять или устанавливать значения атрибутов сущностей (здоровье, скорость, урон и др.). Заменил старый подход через /data.", syntax: { "1.16": "/attribute <цель> <атрибут> (get|base (set|get)|modifier (add|remove|value))" }, params: "цель — сущность; атрибут — например minecraft:generic.max_health; base set/get — основной модификатор; modifier — дополнительные модификаторы." },
+        { name: "/bossbar", version_added: "1.13", version_removed: null, description: "Создаёт и управляет полосами здоровья боссов (BossBar), которые отображаются в верхней части экрана.", syntax: { "1.13": "/bossbar add <id> <название>\n/bossbar set <id> (max|value|visible|color|style|players|name)" }, params: "id — идентификатор полосы; название — текст; value — текущее значение; max — максимальное; color — цвет (blue, green, pink, purple, red, white, yellow)." },
+        { name: "/clear", version_added: "1.4.2", version_removed: null, description: "Очищает инвентарь игрока. Можно указать конкретный предмет и максимальное количество для удаления.", syntax: { "1.4.2": "/clear [игрок] [предмет] [количество]" }, params: "игрок (необязательно) — цель; предмет (необязательно) — ID предмета; количество (необязательно) — сколько удалить." },
+        { name: "/clone", version_added: "1.8", version_removed: null, description: "Копирует блоки из одной прямоугольной области в другую. Поддерживает режимы replace, masked и filtered.", syntax: { "1.8": "/clone <x1 y1 z1> <x2 y2 z2> <x y z> [maskMode] [cloneMode]" }, params: "начало и конец области-источника; координаты назначения; maskMode — replace (по умолчанию), masked, filtered; cloneMode — force, move, normal." },
+        { name: "/damage", version_added: "1.20", version_removed: null, description: "Наносит указанное количество урона сущностям. Можно задать источник и тип урона.", syntax: { "1.20": "/damage <цель> <количество> [тип_урона]" }, params: "цель — сущность; количество — число; тип_урона — например, minecraft:fall, minecraft:magic." },
+        { name: "/data", version_added: "1.13", version_removed: null, description: "Позволяет получать, объединять, изменять или удалять NBT-данные блочных сущностей и мобов.", syntax: { "1.13": "/data (get|merge|modify|remove) <цель> [nbt]" }, params: "get — чтение; merge — слияние; modify — изменение (с 1.20.2); remove — удаление; цель — block|entity|storage." },
+        { name: "/datapack", version_added: "1.13", version_removed: null, description: "Управляет загруженными датапаками: включает, отключает, показывает список.", syntax: { "1.13": "/datapack (enable|disable|list) [название]" }, params: "enable — включить; disable — отключить; list — список (available|enabled)." },
+        { name: "/debug", version_added: "1.3.1", version_removed: null, description: "Начинает или завершает сеанс отладки для профилирования производительности.", syntax: { "1.3.1": "/debug (start|stop|report|function)" }, params: "start — начать; stop — остановить; report — создать отчёт; function — выполнить трассировку функции (с 1.20.5)." },
+        { name: "/defaultgamemode", version_added: "1.3.1", version_removed: null, description: "Устанавливает игровой режим по умолчанию для новых игроков, впервые заходящих в мир.", syntax: { "1.3.1": "/defaultgamemode <режим>" }, params: "режим — survival, creative, adventure, spectator." },
+        { name: "/difficulty", version_added: "1.0", version_removed: null, description: "Устанавливает уровень сложности игры (мирный, лёгкий, нормальный, сложный).", syntax: { "1.0": "/difficulty <уровень>" }, params: "уровень — peaceful (0), easy (1), normal (2), hard (3)." },
+        { name: "/effect", version_added: "1.5", version_removed: null, description: "Накладывает или снимает эффекты на сущности. Можно задать длительность, уровень и скрыть частицы.", syntax: { "1.5": "/effect give <цель> <эффект> [секунды] [усиление] [скрыть_частицы]\n/effect clear <цель> [эффект]" }, params: "give — дать эффект; clear — убрать; цель — сущность; эффект — ID эффекта (speed, jump_boost и т.д.); секунды — длительность; усиление — уровень (0 = I); скрыть_частицы — true/false." },
+        { name: "/enchant", version_added: "1.4.2", version_removed: null, description: "Накладывает зачарование на предмет, который игрок держит в руке. Можно задать уровень зачарования.", syntax: { "1.4.2": "/enchant <цель> <чары> [уровень]" }, params: "цель — игрок; чары — ID чар (sharpness, efficiency и т.д.); уровень — уровень чар (по умолчанию 1)." },
+        { name: "/execute", version_added: "1.8", version_removed: null, description: "Ключевая команда для создания сложной логики: выполняет команды при определённых условиях, от имени других сущностей, в разных позициях и измерениях. В 1.13 полностью переработана, в 1.21 добавлены макросы.", syntax: { "1.8": "/execute <цель> <x> <y> <z> <команда>", "1.13": "/execute (as|at|positioned|if|unless|store|run) ..." }, params: "as — выполнить от имени; at — выполнить в позиции; if/unless — условие (block, entity, score, biome, items); store — сохранить результат; run — основная команда." },
+        { name: "/explosion", version_added: "1.21.4", version_removed: null, description: "Создаёт взрыв в указанной точке. Вызывает физическое или визуальное воздействие.", syntax: { "1.21.4": "/explosion <x> <y> <z> [взрывчатость] [размер] [поджечь] [разрушить_блоки]" }, params: "координаты центра взрыва; взрывчатость — сила; размер — радиус; поджечь — true/false; разрушить_блоки — true/false." },
+        { name: "/experience (/xp)", version_added: "1.3.1", version_removed: null, description: "Добавляет, убирает или устанавливает опыт игрока. Можно выдавать очки или уровни.", syntax: { "1.3.1": "/experience add <цель> <количество> (points|levels)\n/experience set <цель> <количество> (points|levels)" }, params: "add — добавить; set — установить; цель — игрок; количество — число; points — очки опыта; levels — уровни." },
+        { name: "/fill", version_added: "1.8", version_removed: null, description: "Заполняет прямоугольную область указанным блоком. Можно уничтожать (destroy), оставлять (keep) или заменять (replace) существующие блоки.", syntax: { "1.8": "/fill <x1 y1 z1> <x2 y2 z2> <блок> [метод] [заменяемый_блок]" }, params: "координаты углов; блок — ID блока; метод — destroy, hollow, keep, outline, replace." },
+        { name: "/fillbiome", version_added: "1.19", version_removed: null, description: "Заменяет биом в указанной прямоугольной области. Биомы хранятся в ячейках 4×4×4 блока.", syntax: { "1.19": "/fillbiome <x1 y1 z1> <x2 y2 z2> <биом>" }, params: "границы области; биом — ID биома (minecraft:plains, minecraft:desert и т.д.)." },
+        { name: "/forceload", version_added: "1.13.1", version_removed: null, description: "Принудительно загружает или выгружает чанки, чтобы они обрабатывались даже без игроков поблизости.", syntax: { "1.13.1": "/forceload add <x> <z>\n/forceload remove <x> <z>\n/forceload query <x> <z>" }, params: "x, z — координаты чанка; add — добавить; remove — убрать; query — проверить." },
+        { name: "/function", version_added: "1.12", version_removed: null, description: "Запускает функцию из датапака — файл .mcfunction с последовательностью команд. Поддерживает передачу аргументов с 1.20.2.", syntax: { "1.12": "/function <название> [with <параметры>]" }, params: "название — путь к функции (namespace:path/to/function); with — аргументы (с 1.20.2)." },
+        { name: "/gamemode", version_added: "1.3.1", version_removed: null, description: "Изменяет игровой режим для указанного игрока. Режимы: survival (0), creative (1), adventure (2), spectator (3). Ранее использовались сокращения /gmc, /gms, /gma.", syntax: { "1.3.1": "/gamemode <режим> [игрок]" }, params: "режим — creative, survival, adventure, spectator; игрок (необязательно) — цель." },
+        { name: "/gamerule", version_added: "1.4.2", version_removed: null, description: "Изменяет или отображает игровые правила мира (keepInventory, doDaylightCycle, mobGriefing и др.).", syntax: { "1.4.2": "/gamerule <правило> [значение]" }, params: "правило — название правила; значение — true/false или число." },
+        { name: "/give", version_added: "1.3.1", version_removed: null, description: "Выдаёт игроку указанный предмет в заданном количестве. Поддерживает NBT-теги для кастомизации предметов.", syntax: { "1.3.1": "/give <игрок> <предмет> [количество] [данные]" }, params: "игрок — цель; предмет — ID предмета (minecraft:diamond_sword); количество — число; данные — NBT-теги." },
+        { name: "/help", version_added: "1.0", version_removed: null, description: "Показывает список доступных команд или справку по конкретной команде.", syntax: { "1.0": "/help [команда|страница]" }, params: "команда — название команды для справки; страница — номер страницы общего списка." },
+        { name: "/item", version_added: "1.17", version_removed: null, description: "Управляет предметами в инвентарях блоков и сущностей. Заменила команду /replaceitem (1.8–1.16).", syntax: { "1.17": "/item modify|replace <цель> <слот> ..." }, params: "modify — изменить существующий предмет; replace — заменить; цель — block|entity; слот — container.0, hotbar.0 и т.д." },
+        { name: "/jfr", version_added: "1.18", version_removed: null, description: "Запускает или останавливает профилирование Java Flight Recorder для диагностики производительности.", syntax: { "1.18": "/jfr (start|stop)" }, params: "" },
+        { name: "/kill", version_added: "1.3.1", version_removed: null, description: "Наносит цели огромный фиксированный урон (3.4028 × 10^38 единиц), что обычно мгновенно убивает любое живое существо.", syntax: { "1.3.1": "/kill [цель]" }, params: "цель — селектор сущностей (@p, @e[type=zombie], имя игрока)." },
+        { name: "/locate", version_added: "1.11", version_removed: null, description: "Ищет ближайшую структуру, биом или точку интереса (POI) и выводит её координаты. В 1.19 синтаксис изменён на подкоманды.", syntax: { "1.11": "/locate <тип>", "1.19": "/locate structure <тип>\n/locate biome <биом>\n/locate poi <тип>" }, params: "structure — тип структуры; biome — биом; poi — точка интереса." },
+        { name: "/loot", version_added: "1.14", version_removed: null, description: "Выбрасывает предметы из таблицы добычи (loot table) в инвентарь блока, сущности или на землю.", syntax: { "1.14": "/loot (give|insert|spawn) <цель> <источник>" }, params: "give — дать игроку; insert — вставить в инвентарь; spawn — выбросить в мире; цель — игрок или координаты; источник — loot table." },
+        { name: "/me", version_added: "1.0", version_removed: null, description: "Отправляет в чат сообщение от имени игрока в формате: *Игрок действие*.", syntax: { "1.0": "/me <сообщение>" }, params: "сообщение — текст." },
+        { name: "/particle", version_added: "1.8", version_removed: null, description: "Создаёт визуальные частицы в указанной области. Можно задать скорость, количество и режим отображения.", syntax: { "1.8": "/particle <название> <x y z> <dx dy dz> <скорость> <количество> [режим]" }, params: "название — тип частиц; разброс; скорость; количество; режим — force/normal." },
+        { name: "/perf", version_added: "1.21", version_removed: null, description: "Захватывает метрики производительности сервера в течение заданного времени и сохраняет в виде отчёта.", syntax: { "1.21": "/perf (start|stop) [--time <секунды>]" }, params: "start — начать захват; stop — завершить; --time — длительность захвата (по умолчанию 10 секунд)." },
+        { name: "/place", version_added: "1.19", version_removed: null, description: "Размещает в мире структуру, шаблон или объект из датапака в указанном месте.", syntax: { "1.19": "/place feature|jigsaw|structure|template <название> [x y z]" }, params: "feature — разместить объект генерации; structure — разместить структуру; template — разместить структуру из файла." },
+        { name: "/playsound", version_added: "1.6.1", version_removed: null, description: "Воспроизводит звук для игрока или группы игроков. Можно задать громкость и высоту тона.", syntax: { "1.6.1": "/playsound <звук> <источник> <цель> [x y z] [громкость] [тон] [минимальная_громкость]" }, params: "звук — ID звука; источник — master, music, block, hostile и т.д.; цель — игрок или селектор." },
+        { name: "/publish", version_added: "1.3.1", version_removed: null, description: "Открывает одиночный мир для локальной сети (LAN), позволяя другим игрокам подключаться.", syntax: { "1.3.1": "/publish [порт]" }, params: "порт — номер порта (по умолчанию 25565)." },
+        { name: "/random", version_added: "1.20.5", version_removed: null, description: "Генерирует случайное значение в указанном диапазоне или из заданного набора. Полезно для вариативности в датапаках.", syntax: { "1.20.5": "/random value|roll|reset <диапазон> ..." }, params: "value — случайное число; roll — симулировать бросок; reset — сбросить последовательность." },
+        { name: "/recipe", version_added: "1.12", version_removed: null, description: "Выдаёт или отбирает у игрока рецепты крафта и плавки.", syntax: { "1.12": "/recipe (give|take) <цель> (everything|recipe_id)" }, params: "give — выдать рецепт; take — забрать; цель — игрок; everything — все рецепты." },
+        { name: "/reload", version_added: "1.12", version_removed: null, description: "Перезагружает датапаки, таблицы добычи и достижения с диска без перезапуска сервера.", syntax: { "1.12": "/reload" }, params: "Нет параметров." },
+        { name: "/replaceitem", version_added: "1.8", version_removed: "1.17", description: "Заменяет предметы в указанном слоте инвентаря. В 1.17 была заменена на /item replace.", syntax: { "1.8": "/replaceitem block <x> <y> <z> <слот> <предмет> [количество]\n/replaceitem entity <цель> <слот> <предмет> [количество]" }, params: "block — замена в контейнере блока; entity — в инвентаре сущности; слот — slot.container.0 и т.д.; предмет — ID предмета." },
+        { name: "/return", version_added: "1.20", version_removed: null, description: "Завершает выполнение функции и возвращает значение. Используется внутри датапаков для управления потоком выполнения.", syntax: { "1.20": "/return <значение>" }, params: "значение — число, которое вернёт функция." },
+        { name: "/ride", version_added: "1.20", version_removed: null, description: "Управляет 'оседланием' сущностей: позволяет одной сущности ехать на другой, снимает пассажиров или призывает новых.", syntax: { "1.20": "/ride <цель> mount <пассажир>\n/ride <цель> dismount" }, params: "mount — посадить пассажира на цель; dismount — спешиться; цель — транспортное средство." },
+        { name: "/rotate", version_added: "1.21", version_removed: null, description: "Поворачивает сущность в указанном направлении по осям X (вертикаль) и Y (горизонталь).", syntax: { "1.21": "/rotate <цель> <yaw> <pitch>" }, params: "цель — сущность; yaw — горизонтальный угол; pitch — вертикальный угол." },
+        { name: "/say", version_added: "1.0", version_removed: null, description: "Отправляет сообщение в чат от имени сервера (или командного блока).", syntax: { "1.0": "/say <сообщение>" }, params: "сообщение — текст." },
+        { name: "/schedule", version_added: "1.14", version_removed: null, description: "Планирует выполнение функции через заданное время в игровых тиках.", syntax: { "1.14": "/schedule function <функция> <время> [append|replace]\n/schedule clear <функция>" }, params: "функция — путь к функции; время — в тиках (20 тиков = 1 с); append — добавить; replace — заменить." },
+        { name: "/scoreboard", version_added: "1.5", version_removed: null, description: "Мощная система для создания и управления счётчиками, целями, командами и тегами.", syntax: { "1.5": "/scoreboard objectives (add|remove|list|modify|setdisplay) ...\n/scoreboard players (add|remove|set|get|reset|operation|enable) ..." }, params: "objectives — цели (dummy, deathCount, health и т.д.); players — изменение очков игроков или сущностей." },
+        { name: "/seed", version_added: "1.0", version_removed: null, description: "Показывает сид текущего мира.", syntax: { "1.0": "/seed" }, params: "Нет параметров." },
+        { name: "/setblock", version_added: "1.7.2", version_removed: null, description: "Устанавливает один блок в указанной позиции. Может заменить существующий блок или оставить его.", syntax: { "1.7.2": "/setblock <x y z> <блок> [метод] [NBT]" }, params: "координаты; блок — ID блока; метод — destroy, keep, replace (по умолчанию)." },
+        { name: "/setworldspawn", version_added: "1.7.2", version_removed: null, description: "Устанавливает точку появления для всех новых игроков в мире.", syntax: { "1.7.2": "/setworldspawn [x y z] [угол]" }, params: "координаты (необязательно) — если не указаны, используется текущая позиция; угол — направление взгляда." },
+        { name: "/spawnpoint", version_added: "1.4.2", version_removed: null, description: "Устанавливает точку возрождения для игрока.", syntax: { "1.4.2": "/spawnpoint [игрок] [x y z] [угол]" }, params: "игрок (необязательно) — цель; координаты (необязательно); угол (необязательно, с 1.16.2)." },
+        { name: "/spectate", version_added: "1.15", version_removed: null, description: "Переводит игрока в режим наблюдателя и привязывает его камеру к указанной сущности.", syntax: { "1.15": "/spectate <цель> [игрок]" }, params: "цель — сущность, за которой наблюдать; игрок (необязательно) — кого перевести в наблюдатели." },
+        { name: "/spreadplayers", version_added: "1.6.1", version_removed: null, description: "Равномерно распределяет сущности по указанной области на поверхности.", syntax: { "1.6.1": "/spreadplayers <центр_x> <центр_z> <мин_расстояние> <макс_радиус> <команда> <цель>" }, params: "центр x, z; мин_расстояние — минимальное расстояние между сущностями; макс_радиус — радиус разброса; команда — respect|keep; цель — селектор." },
+        { name: "/stopsound", version_added: "1.9", version_removed: null, description: "Останавливает воспроизведение звука для игрока.", syntax: { "1.9": "/stopsound <цель> [источник] [звук]" }, params: "цель — игроки; источник — категория (master, music, voice и т.д.); звук — ID конкретного звука." },
+        { name: "/summon", version_added: "1.7.2", version_removed: null, description: "Призывает сущность (моба, предмет, транспорт и т.д.) в указанном месте с заданными NBT-тегами.", syntax: { "1.7.2": "/summon <сущность> [x y z] [NBT]" }, params: "сущность — ID (minecraft:creeper и т.д.); координаты (необязательно); NBT — кастомизация." },
+        { name: "/tag", version_added: "1.13", version_removed: null, description: "Управляет текстовыми тегами сущностей: добавляет, удаляет или проверяет их.", syntax: { "1.13": "/tag <цель> add|remove|list [тег]" }, params: "цель — сущность; add — добавить тег; remove — удалить; list — показать все теги." },
+        { name: "/team", version_added: "1.13", version_removed: null, description: "Создаёт команды игроков и управляет их параметрами.", syntax: { "1.13": "/team add <название> [отображаемое_имя]\n/team modify <команда> ...\n/team join <команда> [игрок]" }, params: "add — создать команду; modify — изменить параметры (color, prefix, suffix, friendlyFire, collisionRule); join — добавить игрока." },
+        { name: "/teammsg (/tm)", version_added: "1.13", version_removed: null, description: "Отправляет сообщение всем участникам своей команды.", syntax: { "1.13": "/teammsg <сообщение>" }, params: "сообщение — текст." },
+        { name: "/teleport (/tp)", version_added: "1.3.1", version_removed: null, description: "Телепортирует игрока или сущность. До 1.13 /tp и /teleport работали по-разному.", syntax: { "1.3.1": "/tp <цель> <назначение> [угол_y] [угол_x]", "1.13": "/tp <цель> <место>\n/tp <цель> <x> <y> <z> [угол_y] [угол_x]" }, params: "цель — кого телепортировать; место — игрок или координаты; углы — поворот камеры." },
+        { name: "/tellraw", version_added: "1.7.2", version_removed: null, description: "Отправляет игроку JSON-сообщение с форматированием.", syntax: { "1.7.2": "/tellraw <цель> <json-сообщение>" }, params: "цель — селектор или имя игрока; json-сообщение — строка в формате JSON." },
+        { name: "/tick", version_added: "1.20.3", version_removed: null, description: "Управляет скоростью времени в игре: ускоряет, замедляет или замораживает тики.", syntax: { "1.20.3": "/tick (query|rate|step|sprint|freeze) [параметры]" }, params: "query — узнать текущую скорость; rate — установить множитель; step — пошаговое выполнение; sprint — выполнить с максимальной скоростью; freeze — заморозить." },
+        { name: "/time", version_added: "1.0", version_removed: null, description: "Управляет игровым временем: устанавливает, добавляет или запрашивает текущий тик или время суток.", syntax: { "1.0": "/time (add|set|query) <значение>" }, params: "add — добавить тики; set — установить (day=1000, noon=6000, night=13000, midnight=18000); query — узнать (daytime, gametime, day)." },
+        { name: "/title", version_added: "1.8", version_removed: null, description: "Отображает текстовые заголовки и подзаголовки в центре экрана игрока.", syntax: { "1.8": "/title <цель> (clear|reset|title|subtitle|actionbar|times) [текст]" }, params: "цель — игрок; title — большой текст; subtitle — текст снизу; actionbar — строка над инвентарём; times — fadeIn stay fadeOut (в тиках)." },
+        { name: "/trigger", version_added: "1.8", version_removed: null, description: "Позволяет игрокам активировать счётчики типа trigger.", syntax: { "1.8": "/trigger <цель> (add|set) <значение>" }, params: "цель — название счётчика; add — добавить значение; set — установить значение." },
+        { name: "/weather", version_added: "1.0", version_removed: null, description: "Устанавливает погодные условия в мире (ясно, дождь, гроза) на указанную длительность.", syntax: { "1.0": "/weather clear|rain|thunder [длительность]" }, params: "clear — ясно; rain — дождь/снег; thunder — гроза; длительность — в секундах." },
+        { name: "/worldborder", version_added: "1.8", version_removed: null, description: "Управляет границей мира.", syntax: { "1.8": "/worldborder (add|center|damage|get|set|warning) ..." }, params: "center — установить центр; set — установить радиус; add — изменить радиус; warning — предупреждение; damage — урон за границей." },
+        // Удалённые команды
+        { name: "/home", version_added: "Alpha v1.0.16", version_removed: "1.2.5", description: "Телепортирует игрока к точке возрождения мира. Удалено в 1.2.5.", syntax: { "Alpha v1.0.16": "/home" }, params: "" },
+        { name: "/toggledownfall", version_added: "1.0", version_removed: "1.13", description: "Переключает дождь/снег. Удалено в 1.13 (заменено /weather).", syntax: { "1.0": "/toggledownfall" }, params: "" }
+    ];
+
+    // ================== ФУНКЦИИ СРАВНЕНИЯ ВЕРСИЙ ==================
+    function parseVersion(v) { return v.split('.').map(Number); }
+    function compareVersions(v1, v2) {
+        const p1 = parseVersion(v1), p2 = parseVersion(v2);
+        for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+            const a = p1[i] || 0, b = p2[i] || 0;
+            if (a < b) return -1;
+            if (a > b) return 1;
+        }
+        return 0;
+    }
+    function versionGte(v1, v2) { return compareVersions(v1, v2) >= 0; }
+    function versionLt(v1, v2) { return compareVersions(v1, v2) < 0; }
+
+    function isAvailableInVersion(cmd, selectedVersion) {
+        if (selectedVersion === "all") return true;
+        if (versionLt(selectedVersion, cmd.version_added)) return false;
+        if (cmd.version_removed && versionGte(selectedVersion, cmd.version_removed)) return false;
+        return true;
+    }
+
+    function getSyntaxForVersion(cmd, selectedVersion) {
+        if (typeof cmd.syntax === 'string') return cmd.syntax; // fallback
+        const versions = Object.keys(cmd.syntax).sort((a,b) => compareVersions(b,a)); // от новых к старым
+        // если выбрано "all", берём самую новую версию синтаксиса
+        if (selectedVersion === "all") return cmd.syntax[versions[0]];
+        // иначе ищем ближайшую версию <= выбранной
+        for (let v of versions) {
+            if (versionGte(selectedVersion, v)) return cmd.syntax[v];
+        }
+        return cmd.syntax[versions[versions.length-1]]; // самая старая
+    }
+
+    const commandsListEl = document.getElementById('commandsList');
+    const searchInput = document.getElementById('searchInput');
+    const versionSelect = document.getElementById('versionSelect');
+    const modal = document.getElementById('commandModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalName = document.getElementById('modalCommandName');
+    const modalVersion = document.getElementById('modalVersion');
+    const modalDesc = document.getElementById('modalDescription');
+
+    function renderCommands(filteredCommands) {
+        commandsListEl.innerHTML = '';
+        if (filteredCommands.length === 0) {
+            commandsListEl.innerHTML = '<p style="color:#ffffff; text-shadow: 1px 1px 0 #000; text-align:center; font-family:\'Press Start 2P\', cursive;">Ничего не найдено</p>';
+            return;
+        }
+        filteredCommands.forEach(cmd => {
+            const btn = document.createElement('button');
+            btn.className = 'command-btn';
+            let versionInfo = `(добавлено в ${cmd.version_added})`;
+            if (cmd.version_removed) versionInfo += ` [удалено в ${cmd.version_removed}]`;
+            btn.innerHTML = `${cmd.name} <span class="version-badge">${versionInfo}</span>`;
+            btn.addEventListener('click', () => openModal(cmd, versionSelect.value));
+            commandsListEl.appendChild(btn);
+        });
+    }
+
+    function filterCommands() {
+        const searchText = searchInput.value.toLowerCase();
+        const selectedVersion = versionSelect.value;
+        let filtered = commandsData.filter(cmd => {
+            const matchSearch = cmd.name.toLowerCase().includes(searchText) ||
+                                cmd.description.toLowerCase().includes(searchText);
+            const matchVersion = isAvailableInVersion(cmd, selectedVersion);
+            return matchSearch && matchVersion;
+        });
+        renderCommands(filtered);
+    }
+    searchInput.addEventListener('input', filterCommands);
+    versionSelect.addEventListener('change', filterCommands);
+
+    function openModal(cmd, selectedVersion) {
+        modal.style.display = 'block';
+        modalName.textContent = cmd.name;
+        modalVersion.textContent = cmd.version_added + (cmd.version_removed ? ` (удалено в ${cmd.version_removed})` : '');
+        const syntax = getSyntaxForVersion(cmd, selectedVersion);
+        modalDesc.innerHTML = `<p>${cmd.description}</p>
+                               <p><strong>Синтаксис (версия ${selectedVersion === 'all' ? 'последняя' : selectedVersion}):</strong> <code>${syntax.replace(/\n/g, '<br>')}</code></p>
+                               <p><strong>Параметры:</strong> ${cmd.params || "—"}</p>`;
+    }
+    modalClose.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+    renderCommands(commandsData);
+</script>
+{% endblock %}
