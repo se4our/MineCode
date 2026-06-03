@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-container">
+        <h2 class="profile-title">👤 Мой профиль</h2>
+        
+        <div class="profile-info">
+            <div class="info-row">
+                <span class="info-label">Имя пользователя:</span>
+                <span class="info-value">{{ current_user.username }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ current_user.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Администратор:</span>
+                <span class="info-value">{{ "Да" if current_user.is_admin else "Нет" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">ID пользователя:</span>
+                <span class="info-value">{{ current_user.id }}</span>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <a href="{{ url_for('main.index') }}" class="btn-back">🏠 На главную</a>
+            <a href="{{ url_for('main.logout') }}" class="btn-logout">🚪 Выйти</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #6b4f32;
+    padding: 30px;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000;
+}
+.profile-title {
+    text-align: center;
+    font-size: 1.8em;
+    color: #f0e68c;
+    margin-bottom: 30px;
+}
+.info-row {
+    padding: 12px 0;
+    border-bottom: 1px solid #6b4f32;
+    display: flex;
+    justify-content: space-between;
+}
+.info-label {
+    font-weight: bold;
+    color: #f0e68c;
+}
+.info-value {
+    color: #ffffff;
+}
+.profile-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+.btn-back, .btn-logout {
+    padding: 10px 20px;
+    background: rgba(107, 79, 50, 0.9);
+    border: 2px solid #8b7355;
+    color: #f0e68c;
+    font-family: 'Minecraft', monospace;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-back:hover, .btn-logout:hover {
+    background: rgba(139, 115, 85, 1);
+    border-color: #f0e68c;
+}
+</style>
+{% endblock %}

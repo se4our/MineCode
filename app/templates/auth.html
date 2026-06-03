@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <h2 class="auth-title">Вход / Регистрация</h2>
+
+    <div class="auth-form" id="registerForm">
+        <h3>Регистрация</h3>
+        <form method="POST" action="/register">
+            {{ reg_form.hidden_tag() }}
+            <div class="field-wrapper">
+                {{ reg_form.username(placeholder="Никнейм", class="auth-input" + (" error" if reg_form.username.errors else "")) }}
+                {% for error in reg_form.username.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="field-wrapper">
+                {{ reg_form.email(placeholder="Email", class="auth-input" + (" error" if reg_form.email.errors else "")) }}
+                {% for error in reg_form.email.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="field-wrapper">
+                {{ reg_form.password(placeholder="Пароль", class="auth-input" + (" error" if reg_form.password.errors else "")) }}
+                {% for error in reg_form.password.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="field-wrapper">
+                {{ reg_form.confirm(placeholder="Повторите пароль", class="auth-input" + (" error" if reg_form.confirm.errors else "")) }}
+                {% for error in reg_form.confirm.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            {{ reg_form.submit(class="auth-btn") }}
+        </form>
+        <p class="auth-switch">Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+    </div>
+
+    <div class="auth-form" id="loginForm" style="display: none;">
+        <h3>Вход</h3>
+        <form method="POST" action="/login">
+            {{ login_form.hidden_tag() }}
+            <div class="field-wrapper">
+                {{ login_form.username(placeholder="Никнейм", class="auth-input") }}
+            </div>
+            <div class="field-wrapper">
+                {{ login_form.password(placeholder="Пароль", class="auth-input") }}
+            </div>
+            {{ login_form.submit(class="auth-btn") }}
+        </form>
+        <p class="auth-switch">Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
+    </div>
+</div>
+
+<script>
+    function showLogin() {
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
+    }
+    function showRegister() {
+        document.getElementById('registerForm').style.display = 'block';
+        document.getElementById('loginForm').style.display = 'none';
+    }
+</script>
+
+<style>
+    .auth-container { max-width: 400px; margin: 40px auto; background: rgba(0,0,0,0.7); padding: 25px; border: 2px solid #6b4f32; font-family: 'Minecraft', monospace; color: #fff; text-shadow: 1px 1px 0 #000; }
+    .auth-title { text-align: center; color: #f0e68c; margin-bottom: 20px; }
+    .auth-form { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .auth-form h3 { margin: 0 0 10px 0; color: #f5e56c; }
+    .field-wrapper { width: 100%; margin-bottom: 8px; }
+    .auth-input { width: 100%; max-width: 350px; padding: 10px; margin: 0 auto; display: block; background: #2a2a2a; border: 2px solid #6b4f32; color: #fff; font-family: 'Minecraft', monospace; font-size: 0.9em; box-sizing: border-box; }
+    .auth-input.error { border-color: #ff5555 !important; }
+    .auth-btn { width: auto; min-width: 200px; padding: 10px 20px; margin: 15px auto 0; display: block; background: #6b4f32; border: 2px solid #8b7355; color: #f0e68c; font-family: 'Minecraft', monospace; cursor: pointer; transition: background 0.2s; font-size: 1em; }
+    .auth-btn:hover { background: #8b7355; }
+    .auth-switch { text-align: center; font-size: 0.8em; color: #ccc; margin-top: 10px; }
+    .auth-switch a { color: #f0e68c; text-decoration: underline; cursor: pointer; }
+    .field-error { color: #ff5555; font-size: 0.7em; display: block; margin-top: -5px; margin-bottom: 5px; text-align: left; max-width: 350px; margin-left: auto; margin-right: auto; }
+</style>
+{% endblock %}

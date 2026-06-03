@@ -12,13 +12,19 @@
     <div class="page-wrapper">
         <header>
             <nav class="navbar">
-                <a href="/" class="logo">MineCode</a>
+                <a href="{{ url_for('main.index') }}" class="logo">MineCode</a>
                 <div class="nav-links">
-                    <a href="/">Главная</a>
-                    <a href="/fundamentals">Теория</a>
+                    <a href="{{ url_for('main.index') }}">Главная</a>
+                    <a href="{{ url_for('main.fundamentals') }}">Теория</a>
                     <a href="#">Практика</a>
                     <a href="#">FAQ</a>
-                    <a href="#">Вход</a>
+
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('main.profile') }}">Профиль</a>
+                        <a href="{{ url_for('main.logout') }}">Выход</a>
+                    {% else %}
+                        <a href="{{ url_for('main.auth') }}">Вход</a>
+                    {% endif %}
                 </div>
             </nav>
         </header>

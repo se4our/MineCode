@@ -5,11 +5,12 @@ from config import Config
 
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'login'
+login_manager.login_view = 'main.login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return None
+    from app.models import User
+    return User.query.get(int(user_id))
 
 def create_app():
     app = Flask(__name__)
