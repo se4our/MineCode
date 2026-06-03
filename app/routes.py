@@ -33,18 +33,6 @@ def fundamentals():
 def theory():
     return render_template('theory.html', title='Справочник команд', body_class='theory-bg')
 
-# Практика (тесты)
-@main.route('/practice')
-def practice():
-    return render_template('practice.html', title='Практические тесты', body_class='theory-bg')
-
-# Страница теста
-@main.route('/test')
-def test():
-    topic = request.args.get('topic', 'Неизвестная тема')
-    difficulty = request.args.get('difficulty', 'easy')
-    return render_template('test.html', title=f'Тест: {topic}', topic=topic, difficulty=difficulty, body_class='theory-bg')
-
 # Регистрация / вход
 @main.route('/auth')
 def auth():
