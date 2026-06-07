@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="test-container">
+    <h2 class="test-title">{{ topic }}</h2>
+    <div class="timer">Осталось: <span id="timerDisplay">06:00</span></div>
+
+    <div class="question-box" id="questionBox">
+        <p class="question-text" id="questionText"></p>
+        <div id="answersArea"></div>
+        <p class="practice-hint" id="practiceHint" style="display: none;">
+            Для вопросов с несколькими пропусками вводите ответы через пробел (например: @e distance).
+            Если ответ состоит из одного сегмента и содержит пробел (например: gamemode survival), вводите его как есть.
+        </p>
+    </div>
+
+    <div class="nav-buttons">
+        <button id="prevBtn" class="nav-btn">← Предыдущий</button>
+        <button id="nextBtn" class="nav-btn">Следующий →</button>
+        <button id="finishBtn" class="nav-btn finish-btn" style="display: none;">Завершить тестирование</button>
+    </div>
+</div>
+
+<script>
+    // ================== ПУЛЫ ВОПРОСОВ (СТАТИЧЕСКИЙ РЕЗЕРВ) ==================
+    const questionPools = {
+        "Игровые правила и базовые команды": [
+            { type: 'theory', question: 'Какая команда меняет режим игры на творческий?', options: ['/gamemode creative', '/gm 1', '/gmc', 'Все варианты верны'], correct: 3, explanation: 'Все три команды переключают в творческий режим.' },
+            { type: 'theory', question: 'Что делает команда /kill?', options: ['Наносит 1000 урона', 'Наносит колоссальный урон (3.4e38)', 'Удаляет игрока', 'Отключает сервер'], correct: 1, explanation: '/kill наносит огромный урон, фатальный для обычных существ. Примечание : раньше команда действительно наносила 1000 урона, из-за чего её можно было пережить, но сейчас она просто наносит смертельно много урона.' },
+            { type: 'theory', question: 'Как установить правило keepInventory в true?', options: ['/gamerule keepInventory true', '/gamerule keepInventory 1', '/rule keepInventory true', '/set keepInventory true'], correct: 0, explanation: '/gamerule keepInventory true позволяет сохранять инвентарь после смерти. Примечание : 1 не тоже самое, что true, поскольку майнкрафт воспринимает только буквенную запись' },
+            { type: 'theory', question: 'Что показывает команда /seed?', options: ['Координаты игрока', 'Сид мира', 'Количество блоков', 'Время игры'], correct: 1, explanation: '/seed выводит в чат сид текущего мира.' },
+            { type: 'theory', question: 'Какая команда выдаёт предмет?', options: ['/give', '/item', '/loot', '/spawn'], correct: 0, explanation: '/give мгновенно выдаёт предмет игроку. Примечание : команда loot не выдаёт, а спавнит предмет' },
+            { type: 'theory', question: 'Что делает /defaultgamemode?', options: ['Устанавливает режим для всех', 'Меняет режим текущему игроку', 'Устанавливает режим по умолчанию', 'Ничего'], correct: 2, explanation: 'Определяет режим, в который переводит новых игроков.' },
+            { type: 'theory', question: 'Что такое командный блок?', options: ['Блок, выполняющий команды', 'Блок, хранящий команды', 'Блок, отключающий команды', 'Обычный блок'], correct: 0, explanation: 'Командный блок выполняет введённую команду при активации.' },
+            { type: 'theory', question: 'Можно ли отменить выполнение команды?', options: ['Да, //undo', 'Нет, нельзя', 'Только через моды', 'Да, через /rollback'], correct: 2, explanation: 'В ванильном Minecraft нет команды для отмены предыдущей команды, но в модах есть такая возможность, например //undo в моде WorldEdit.' },
+            { type: 'theory', question: 'Что делает команда /help?', options: ['Показывает список команд', 'Выключает сервер', 'Помогает игроку', 'Ничего'], correct: 0, explanation: '/help выводит список доступных команд.' },
+            { type: 'theory', question: 'Как установить мирный режим (Peaceful)?', options: ['/difficulty peaceful', '/difficulty 0', '/difficulty p', 'Все варианты верны'], correct: 0, explanation: 'Можно использовать только название peaceful' },
+            { type: 'theory', question: 'Что означает @a в команде?', options: ['Все игроки', 'Ближайший игрок', 'Случайный игрок', 'Все сущности'], correct: 0, explanation: '@a — это селектор, выбирающий всех игроков.' },
+            { type: 'theory', question: 'Как узнать время суток?', options: ['/time query daytime', '/time get', '/daytime', '/clock'], correct: 0, explanation: '/time query daytime возвращает текущее время суток в тиках.' },
+
+            // Практические (8)
+            { type: 'practice', question: 'Переведите ближайшего игрока в режим выживания: /[  ] [  ] @p', correct_answer: ['gamemode survival', 'gms', 'gamemode 0'] },
+            { type: 'practice', question: 'Установите сложность на Hard: /[  ] hard', correct_answer: 'difficulty' },
+            { type: 'practice', question: 'Выдайте 64 камня игроку Steve: /[  ] [  ] minecraft:stone 64', correct_answer: 'give Steve' },
+            { type: 'practice', question: 'Установите мировую точку спавна мира в текущие координаты: /[  ]', correct_answer: ['setworldspawn', 'setworldspawn ~ ~'] },
+            { type: 'practice', question: 'Убейте случайного игрока: /kill [  ]', correct_answer: '@r' },
+            { type: 'practice', question: 'Установите правило, чтобы мобы не могли разрушать блоки: /gamerule [  ] false', correct_answer: 'mobGriefing' },
+            { type: 'practice', question: 'Переключитесь в режим наблюдателя: /gamemode [  ]', correct_answer: ['spectator', '3'] },
+            { type: 'practice', question: 'Очистите инвентарь игрока Alex: /clear [  ]', correct_answer: 'Alex' },
+        ],
+
+        "Создание и удаление сущностей": [
+            { type: 'theory', question: 'Какая команда призывает сущность?', options: ['/summon', '/spawn', '/create', '/entity'], correct: 0, explanation: '/summon — основная команда для призыва существ.' },
+            { type: 'theory', question: 'Как призвать корову?', options: ['/summon cow', '/spawn cow', '/create cow', '/entity cow'], correct: 0, explanation: 'Используйте /summon с названием сущности (cow).' },
+            { type: 'theory', question: 'Что делает команда /kill @e?', options: ['Убивает всех игроков', 'Убивает все сущности', 'Убивает только мобов', 'Ничего'], correct: 1, explanation: '@e выбирает все сущности, включая игроков, мобов, предметы и т.д.' },
+            { type: 'theory', question: 'Как удалить всех кур в мире?', options: ['Использовать селектор type=minecraft:chicken', 'написать команду /kill @a', 'написать команду /kill chicken', 'удалить с помощью команды /remove chicken'], correct: 0, explanation: 'Селектор @e с фильтром type позволяет выбрать сущности определённого типа.' },
+            { type: 'theory', question: 'Можно ли призвать свинью с именем?', options: ['Да, через NBT-тег CustomName', 'Нет, нельзя', 'Только командой /name', 'Только через /data'], correct: 0, explanation: 'Для задания имени используется {CustomName:"\\"имя\\""}' },
+            { type: 'theory', question: 'Что означает @e в команде?', options: ['Все сущности', 'Только игроки', 'Только мобы', 'Случайная сущность'], correct: 0, explanation: '@e — селектор, выбирающий все существующие сущности.' },
+            { type: 'theory', question: 'Как убить самого себя командой?', options: ['/kill', '/kill @s', '/kill @p', 'Все варианты верны'], correct: 3, explanation: '/kill и /kill @s убивают исполнителя. Если /kill @p прописывается игроком, то ближайшим игроком посчитает самого исполнителя.' },
+            { type: 'theory', question: 'Можно ли призвать зомби в золотой броне?', options: ['Да, через NBT-тег', 'Нет, нельзя', 'Только командой /equip', 'Только через /data'], correct: 0, explanation: 'Броня задаётся через NBT-тег {ArmorItems:[...]}' },
+            { type: 'theory', question: 'Как убрать всех мобов в радиусе 10 блоков?', options: ['Написать в селекторах distance=..10', 'Написать после сущности цифру 10', 'Использовать команду /remove с указанием моба и расстояния', 'Такой команды нет'], correct: 0, explanation: 'Фильтр distance=..10 ограничивает дистанцию ДО 10 блоков от исполнителя' },
+            { type: 'theory', question: 'Что произойдёт, если ввести /kill @e без фильтров?', options: ['Убьёт всё, включая игроков', 'Убьёт только мобов', 'Ничего', 'Перманентный бан'], correct: 0, explanation: 'Без фильтров @e убьёт абсолютно все сущности, включая игроков и предметы. Примечание : если вы сделали это на мире с картой вашего друга, то вариант 4 возможен.' },
+            { type: 'theory', question: 'Как призвать опыт (сферы опыта)?', options: ['/summon experience_orb', '/summon xp_bottle', '/xp', '/experience'], correct: 0, explanation: 'Сферы опыта можно призвать с помощью /summon experience_orb.' },
+            { type: 'theory', question: 'Какая команда удаляет все сущности типа minecraft:item?', options: ['/kill с указанием типа сущности item', '/kill item', '/clear и указать тип item', 'Ни один из вариантов'], correct: 0, explanation: 'Команда /kill с указанием селектора type=item удалит все сущности item, тоесть все подбираемые предметы, лежащие на земле' },
+
+            { type: 'practice', question: 'Призовите свинью на текущей позиции: /[   ] pig', correct_answer: 'summon' },
+            { type: 'practice', question: 'Призовите стойку для брони: /[   ] armor_stand', correct_answer: 'summon' },
+            { type: 'practice', question: 'Убейте всех куриц на расстоянии 7 блоков: /kill [ ][type=chicken,[   ]=..7]', correct_answer: '@e distance' },
+            { type: 'practice', question: 'Удалите все выпавшие предметы в радиусе 5 блоков: /kill [ ][type=item,[   ]=..5]', correct_answer: '@e distance' },
+            { type: 'practice', question: 'Призовите молнию: /summon [   ]', correct_answer: 'lightning_bolt' },
+            { type: 'practice', question: 'Убейте всех сущностей, кроме игроков: /kill @e[type=[   ]]', correct_answer: '!player' },
+            { type: 'practice', question: 'Призовите корову: /summon [   ]', correct_answer: ['cow','minecraft:cow'] },
+            { type: 'practice', question: 'Удалите всех зомби в мире: /kill [  ][type=[   ]]', correct_answer: '@e zombie' },
+        ],
+
+        "Телепортация и точки спавна": [
+            { type: 'theory', question: 'Какая команда телепортирует игрока?', options: ['/tp', '/teleport', '/move', 'Варианты 1 и 2 верны'], correct: 3, explanation: 'Команды /tp и /teleport выполняют одинаковую функцию.' },
+            { type: 'theory', question: 'Как телепортироваться к игроку Alex?', options: ['/tp Alex', '/tp @p Alex', '/teleport to Alex', 'Варианты 1 и 2 верны'], correct: 3, explanation: '/tp Alex перемещает вас к игроку Alex. /tp @p Alex переместит ближайшего игрока от исполнителя к Alex. Если сам исполнитель - игрок, то к Alex переместит исполнителя' },
+            { type: 'theory', question: 'Что делает команда /spawnpoint?', options: ['Устанавливает точку возрождения игрока', 'Телепортирует игрока', 'Создаёт спавн мобов', 'Ничего'], correct: 0, explanation: '/spawnpoint задаёт индивидуальную точку возрождения.' },
+            { type: 'theory', question: 'Можно ли телепортироваться в координаты (100, 65, 200)?', options: ['Да, /tp 100 65 200', 'Нет, только к игрокам', 'Только в пределах видимости', 'Только через команду /move'], correct: 0, explanation: '/tp с координатами позволяет перемещаться в любую точку мира.' },
+            { type: 'theory', question: 'Какой селектор используется для телепортации всех игроков?', options: ['@a', '@p', '@e', '@r'], correct: 0, explanation: '@a выбирает всех игроков на сервере.' },
+            { type: 'theory', question: 'Что произойдёт, если ввести /tp без аргументов?', options: ['Ошибка', 'Телепортация к спавну', 'Телепортация в случайное место', 'Ничего'], correct: 0, explanation: 'Команда /tp требует указания цели или координат.' },
+            { type: 'theory', question: 'Как установить точку спавна для конкретного игрока?', options: ['/spawnpoint Steve', '/setspawn Steve', '/spawn Steve', '/point Steve'], correct: 0, explanation: '/spawnpoint Steve установит точку возрождения Стива в его текущем местоположении.' },
+            { type: 'theory', question: 'Что такое точка возрождения мира?', options: ['Точка появления новых игроков', 'Случайная точка', 'Точка возрождения мобов', 'Место последней смерти'], correct: 0, explanation: 'Мировая точка спавна (world spawn) — это координаты, в которых появляются все новые игроки.' },
+            { type: 'theory', question: 'Какая команда задаёт точку возрождения мира?', options: ['/setworldspawn', '/worldspawn', '/spawnpoint', '/setspawn'], correct: 0, explanation: '/setworldspawn устанавливает точку появления для всех новых игроков.' },
+            { type: 'theory', question: 'Можно ли телепортироваться в Нижний мир через /tp?', options: ['Нет, только через портал', 'Да, с указанием измерения', 'Только в творческом режиме', 'Только командой /nether'], correct: 0, explanation: 'Нужно использовать /execute in minecraft:the_nether или телепортацию в порталы.' },
+            { type: 'theory', question: 'Что делает параметр facing в /teleport?', options: ['Определяет направление взгляда после телепортации', 'Указывает цель', 'Задаёт координаты', 'Ничего'], correct: 0, explanation: 'facing позволяет сразу повернуть игрока в нужную сторону.' },
+            { type: 'theory', question: 'Как телепортировать игрока к ближайшей сущности?', options: ['/tp Alex @e[type=cow,sort=nearest,limit=1]', '/tp @p nearest', '/tp @p @p', 'Нельзя'], correct: 0, explanation: 'Селектор с sort=nearest выбирает ближайшую корову. Примечание : если не написать limit = 1, ограничивая выборку до 1 сущности, то выдаст ошибку, поскольку нельзя переместиться сразу к нескольким сущностям одновременно' },
+            { type: 'theory', question: 'Какая команда отменит точку спавна игрока?', options: ['/spawnpoint Steve reset', '/clearspawn Steve', '/respawn Steve', 'Таких нет'], correct: 3, explanation: 'Если была установлена точка спавна через /spawnpoint, то её уже не удалить, можно только перезаписать' },
+            { type: 'theory', question: 'Что такое поворот угла (yaw/pitch) в /tp?', options: ['Горизонтальный и вертикальный поворот', 'Скорость перемещения', 'Тип телепортации', 'Координаты'], correct: 0, explanation: 'yaw — горизонтальный поворот, pitch — вертикальный.' },
+
+            { type: 'practice', question: 'Телепортируйте себя к игроку Alex: /tp [  ]', correct_answer: 'Alex' },
+            { type: 'practice', question: 'Установите точку спавна для Steve в координатах 10 64 20: /spawnpoint Steve [  ]', correct_answer: '10 64 20' },
+            { type: 'practice', question: 'Телепортируйте всех игроков к мировому спавну: /tp @a [  ]', correct_answer: '0 64 0' },
+            { type: 'practice', question: 'Установите мировую точку спавна в текущие координаты: /[  ]', correct_answer: 'setworldspawn' },
+            { type: 'practice', question: 'Телепортируйте себя на 10 блоков вперёд: /tp @s [  ]', correct_answer: '^ ^ ^10' },
+            { type: 'practice', question: 'Задайте точку спавна для ближайшего игрока с углом 90°: /spawnpoint @p ~ ~ ~ [  ]', correct_answer: '90' },
+        ]
+    };
+
+    // Получаем тему и сложность из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const topic = urlParams.get('topic') || 'Игровые правила и базовые команды';
+    const difficulty = urlParams.get('difficulty') || 'easy';
+
+    let questionPool = [];   // будет заполнен кастомными или статическими вопросами
+    let currentQuestions = [];
+    let userAnswers = [];
+    let currentIndex = 0;
+    let timeLeft = 360; // 6 минут
+    let timerInterval;
+    let testFinished = false;
+
+    // ================== ЗАГРУЗКА КАСТОМНЫХ ВОПРОСОВ ==================
+    async function fetchCustomQuestions() {
+        try {
+            const resp = await fetch(`/api/questions?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.length > 0) {
+                    // преобразуем из формата API в формат теста
+                    return data.map(q => ({
+                        type: q.type,
+                        question: q.question,
+                        options: q.options,
+                        correct: q.correct,
+                        correct_answer: q.correct_answer || q.correct,
+                        explanation: q.explanation || ''
+                    }));
+                }
+            }
+        } catch (e) {
+            console.warn('Не удалось загрузить кастомные вопросы, используется стандартный набор');
+        }
+        return null;
+    }
+
+    async function loadQuestionPool() {
+        const custom = await fetchCustomQuestions();
+        if (custom) {
+            questionPool = custom;
+        } else {
+            // fallback на статический пул
+            questionPool = questionPools[topic] || questionPools["Игровые правила и базовые команды"];
+        }
+    }
+
+    // ================== ПЕРЕМЕШИВАНИЕ ВАРИАНТОВ ==================
+    function shuffleOptions(question) {
+        if (question.type !== 'theory') return question;
+        const options = [...question.options];
+        const correctIndex = question.correct;
+        const correctAnswer = options[correctIndex];
+        for (let i = options.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [options[i], options[j]] = [options[j], options[i]];
+        }
+        const newCorrectIndex = options.indexOf(correctAnswer);
+        return { ...question, options, correct: newCorrectIndex };
+    }
+
+    // ================== СОХРАНЕНИЕ / ЗАГРУЗКА СОСТОЯНИЯ ==================
+    function loadState() {
+        const saved = sessionStorage.getItem('testState');
+        if (saved) {
+            const state = JSON.parse(saved);
+            currentQuestions = state.currentQuestions;
+            userAnswers = state.userAnswers;
+            currentIndex = state.currentIndex;
+            timeLeft = state.timeLeft;
+            testFinished = state.testFinished || false;
+            return true;
+        }
+        return false;
+    }
+
+    function saveState() {
+        if (testFinished) return;
+        const state = { currentQuestions, userAnswers, currentIndex, timeLeft, testFinished };
+        sessionStorage.setItem('testState', JSON.stringify(state));
+    }
+
+    // ================== ВЫБОР ВОПРОСОВ ==================
+    function selectQuestions() {
+        const theory = questionPool.filter(q => q.type === 'theory');
+        const practice = questionPool.filter(q => q.type === 'practice');
+        const shuffledTheory = theory.sort(() => Math.random() - 0.5).slice(0, 3);
+        const shuffledPractice = practice.sort(() => Math.random() - 0.5).slice(0, 2);
+        const randomizedTheory = shuffledTheory.map(q => shuffleOptions(q));
+        currentQuestions = [...randomizedTheory, ...shuffledPractice].sort(() => Math.random() - 0.5);
+        userAnswers = new Array(currentQuestions.length).fill(null);
+    }
+
+    // ================== РЕНДЕР ВОПРОСА ==================
+    function renderQuestion() {
+        const q = currentQuestions[currentIndex];
+        document.getElementById('questionText').textContent = `Вопрос ${currentIndex + 1} из ${currentQuestions.length}: ${q.question}`;
+        const answersArea = document.getElementById('answersArea');
+        const hint = document.getElementById('practiceHint');
+        answersArea.innerHTML = '';
+
+        if (q.type === 'theory') {
+            hint.style.display = 'none';
+            q.options.forEach((opt, idx) => {
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'theoryAnswer';
+                radio.value = idx;
+                if (userAnswers[currentIndex] === idx) radio.checked = true;
+                radio.addEventListener('change', () => {
+                    userAnswers[currentIndex] = idx;
+                    saveState();
+                });
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(opt));
+                answersArea.appendChild(label);
+            });
+        } else {
+            hint.style.display = 'block';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'practice-input';
+            input.placeholder = 'Введите сегмент команды...';
+            if (userAnswers[currentIndex]) input.value = userAnswers[currentIndex];
+            input.addEventListener('input', (e) => {
+                userAnswers[currentIndex] = e.target.value;
+                saveState();
+            });
+            answersArea.appendChild(input);
+        }
+
+        document.getElementById('prevBtn').style.display = currentIndex === 0 ? 'none' : 'inline-block';
+        document.getElementById('nextBtn').style.display = currentIndex === currentQuestions.length - 1 ? 'none' : 'inline-block';
+        document.getElementById('finishBtn').style.display = currentIndex === currentQuestions.length - 1 ? 'inline-block' : 'none';
+    }
+
+    // ================== ТАЙМЕР ==================
+    function startTimer() {
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            saveState();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                finishTest();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const secs = (timeLeft % 60).toString().padStart(2, '0');
+        document.getElementById('timerDisplay').textContent = `${mins}:${secs}`;
+    }
+
+    // ================== ЗАВЕРШЕНИЕ ТЕСТА ==================
+    function finishTest() {
+        clearInterval(timerInterval);
+        testFinished = true;
+        sessionStorage.removeItem('testState');
+        enableNavigation();
+
+        let score = 0;
+        const results = currentQuestions.map((q, i) => {
+            let correct = false;
+            if (q.type === 'theory') {
+                correct = userAnswers[i] === q.correct;
+            } else {
+                const ans = userAnswers[i] ? userAnswers[i].trim().toLowerCase() : '';
+                const ref = q.correct_answer;
+                if (Array.isArray(ref)) {
+                    // Одиночный сегмент (возможно с пробелами) — массив допустимых вариантов
+                    correct = ref.some(a => a.toLowerCase() === ans);
+                } else {
+                    // Несколько сегментов, разделённых пробелами
+                    const userParts = ans.split(/\s+/);
+                    const correctParts = ref.trim().toLowerCase().split(/\s+/);
+                    correct = userParts.length === correctParts.length && userParts.every((part, idx) => part === correctParts[idx]);
+                }
+            }
+            if (correct) score += 1;
+            return { question: q, userAnswer: userAnswers[i], correct };
+        });
+
+        const container = document.querySelector('.test-container');
+        container.innerHTML = `
+            <h2>Результаты теста</h2>
+            <div class="result-layout">
+                <div class="result-summary">
+                    <p>Вы набрали ${score} из ${currentQuestions.length} баллов</p>
+                    <p>Времени оставалось: ${document.getElementById('timerDisplay').textContent}</p>
+                    <p><a href="/practice" class="return-btn">← Вернуться к темам</a></p>
+                </div>
+                <div class="result-details">
+                    ${results.map((r, i) => {
+                        let userAnswerDisplay = '';
+                        if (r.question.type === 'theory') {
+                            if (r.userAnswer !== null && r.userAnswer !== undefined) {
+                                userAnswerDisplay = r.question.options[r.userAnswer];
+                            } else {
+                                userAnswerDisplay = 'нет ответа';
+                            }
+                        } else {
+                            userAnswerDisplay = r.userAnswer || 'нет ответа';
+                        }
+
+                        let correctAnswerDisplay = '';
+                        if (r.question.type === 'practice') {
+                            const ca = r.question.correct_answer;
+                            correctAnswerDisplay = Array.isArray(ca) ? ca.join(' или ') : ca;
+                        } else {
+                            const opt = r.question.options[r.question.correct];
+                            correctAnswerDisplay = opt !== undefined ? opt : 'Нет данных';
+                        }
+
+                        return `
+                            <div class="result-item ${r.correct ? 'correct' : 'incorrect'}">
+                                <p><strong>Вопрос ${i+1}:</strong> ${r.question.question}</p>
+                                <p>Ваш ответ: ${userAnswerDisplay}</p>
+                                ${!r.correct ? `<p>Правильный ответ: ${correctAnswerDisplay}</p>` : ''}
+                                <p>${r.correct ? '✓ Ответ верный' : '✗ Ответ неверный'}</p>
+                                ${!r.correct && r.question.explanation ? `<p class="explanation">${r.question.explanation}</p>` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // ================== БЛОКИРОВКА НАВИГАЦИИ ==================
+    function disableNavigation() {
+        document.querySelectorAll('.navbar a').forEach(link => {
+            link.style.pointerEvents = 'none';
+            link.style.opacity = '0.5';
+        });
+        const logo = document.querySelector('.logo');
+        if (logo) logo.style.pointerEvents = 'none';
+    }
+
+    function enableNavigation() {
+        document.querySelectorAll('.navbar a').forEach(link => {
+            link.style.pointerEvents = 'auto';
+            link.style.opacity = '1';
+        });
+        const logo = document.querySelector('.logo');
+        if (logo) logo.style.pointerEvents = 'auto';
+    }
+
+    // ================== ИНИЦИАЛИЗАЦИЯ ==================
+    async function init() {
+        await loadQuestionPool();   // загрузили кастомные или статические вопросы
+
+        if (!loadState()) {
+            selectQuestions();      // выбрали 3 теории + 2 практики из questionPool
+            saveState();
+        }
+
+        if (testFinished) {
+            finishTest();
+        } else {
+            disableNavigation();
+            renderQuestion();
+            startTimer();
+        }
+    }
+
+    // Запуск
+    init();
+
+    // Обработчики кнопок
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderQuestion();
+            saveState();
+        }
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        if (currentIndex < currentQuestions.length - 1) {
+            currentIndex++;
+            renderQuestion();
+            saveState();
+        }
+    });
+    document.getElementById('finishBtn').addEventListener('click', finishTest);
+
+    window.addEventListener('beforeunload', () => {
+        if (!testFinished) saveState();
+        enableNavigation();
+    });
+</script>
+
+<style>
+    .test-container {
+        max-width: 800px;
+        margin: 20px auto;
+        background: rgba(0,0,0,0.7);
+        padding: 25px;
+        border: 2px solid #6b4f32;
+        font-family: 'Minecraft', monospace;
+        color: #fff;
+        text-shadow: 1px 1px 0 #000;
+    }
+
+    .test-title {
+        text-align: center;
+        color: #f0e68c;
+        margin-bottom: 10px;
+    }
+
+    .timer {
+        text-align: center;
+        font-size: 1.2em;
+        margin-bottom: 20px;
+        color: #ff5555;
+    }
+
+    .question-box {
+        margin-bottom: 30px;
+    }
+
+    .question-text {
+        font-size: 1.1em;
+        margin-bottom: 15px;
+    }
+
+    .option-label {
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+    }
+
+    .option-label input {
+        margin-right: 8px;
+    }
+
+    .practice-input {
+        width: 100%; padding: 10px; background: #2a2a2a; border: 2px solid #6b4f32;
+        color: #fff; font-family: 'Minecraft', monospace; font-size: 1em;
+    }
+
+    .practice-hint {
+        font-size: 0.7em;
+        color: #aaa;
+        margin-top: 8px;
+        text-align: left;
+    }
+
+    .nav-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+    }
+
+    .nav-btn {
+        padding: 10px 20px;
+        background: #6b4f32;
+        border: 2px solid #8b7355;
+        color: #f0e68c;
+        font-family: 'Minecraft', monospace;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .nav-btn:hover {
+        background: #8b7355;
+    }
+
+    .finish-btn {
+        background: #a02a2a;
+        border-color: #c04040;
+    }
+
+    .finish-btn:hover {
+        background: #c04040;
+    }
+
+    .result-layout {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .result-summary {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .result-details {
+        flex: 2;
+    }
+
+    .result-item {
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #6b4f32;
+    }
+
+    .correct {
+        background: rgba(0,128,0,0.3);
+    }
+
+    .incorrect {
+        background: rgba(255,0,0,0.3);
+    }
+
+    .explanation {
+        font-size: 0.9em;
+        color: #ffd700;
+        margin-top: 5px;
+    }
+
+    .return-btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: #6b4f32;
+        border: 2px solid #8b7355;
+        color: #f0e68c;
+        font-family: 'Minecraft', monospace;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .return-btn:hover {
+        background: #8b7355;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="practice-container">
+    <div class="practice-left">
+        <h2 class="practice-heading">Практические и теоретические тесты</h2>
+        <div class="difficulty-buttons">
+            <button class="diff-btn easy-btn" data-difficulty="easy">Лёгкие</button>
+            <button class="diff-btn medium-btn" data-difficulty="medium">Средние</button>
+            <button class="diff-btn hard-btn" data-difficulty="hard">Сложные</button>
+        </div>
+    </div>
+
+    <div class="practice-right">
+        <h3 class="rating-title">Глобальный рейтинг</h3>
+        <table class="rating-table">
+            <thead>
+                <tr>
+                    <th>Место</th>
+                    <th>Игрок</th>
+                    <th>Баллы</th>
+                </tr>
+            </thead>
+            <tbody id="ratingBody"></tbody>
+        </table>
+        <p class="rating-note">
+            Лёгкий тест — 1 балл &nbsp;|&nbsp; Средний — 2 балла &nbsp;|&nbsp; Сложный — 3 балла &nbsp;|&nbsp; Теория — 0.5 балла
+        </p>
+    </div>
+</div>
+
+<div id="topicModal" class="modal" style="display: none;">
+    <div class="modal-content dirt-bg">
+        <span class="modal-close" id="modalClose">&times;</span>
+        <h3 id="modalTitle">Темы раздела</h3>
+        <ul id="topicList" class="topic-list"></ul>
+    </div>
+</div>
+
+<script>
+    const topicsByDifficulty = {
+        easy: [
+            "Игровые правила и базовые команды",
+            "Создание и удаление сущностей",
+            "Телепортация и точки спавна",
+            "Выдача предметов",
+            "Основы командных блоков"
+        ],
+        medium: [
+            "Использование селекторов",
+            "Синтаксис команд",
+            "Крупные команды (clone, fill, setblock)",
+            "Работа со счётчиками (scoreboard)",
+            "Эффекты и зачарования"
+        ],
+        hard: [
+            "Дополнительные настройки селекторов",
+            "Многоступенчатая структура /execute",
+            "Привязка координат относительно исполнителя",
+            "Работа с NBT-данными",
+            "Датапаки и функции"
+        ]
+    };
+
+    const modal = document.getElementById('topicModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalTitle = document.getElementById('modalTitle');
+    const topicList = document.getElementById('topicList');
+
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const difficulty = btn.dataset.difficulty;
+            const topics = topicsByDifficulty[difficulty];
+            if (!topics) return;
+
+            const diffNames = { easy: 'Лёгкие', medium: 'Средние', hard: 'Сложные' };
+            modalTitle.textContent = `Темы — ${diffNames[difficulty]}`;
+            topicList.innerHTML = topics.map(topic => {
+                return `<li><a href="/test?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}">${topic}</a></li>`;
+            }).join('');
+            modal.style.display = 'block';
+        });
+    });
+
+    modalClose.addEventListener('click', () => { modal.style.display = 'none'; });
+    window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+    async function loadRating() {
+        const tbody = document.getElementById('ratingBody');
+        try {
+            const response = await fetch('/api/rating');
+            if (!response.ok) throw new Error('Ошибка сети');
+            const data = await response.json();
+            tbody.innerHTML = data.map(row =>
+                `<tr><td>${row.place}</td><td>${row.player}</td><td>${row.score}</td></tr>`
+            ).join('');
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#aaa;">Рейтинг временно недоступен</td></tr>';
+        }
+    }
+
+    loadRating();
+</script>
+
+<style>
+    .practice-container { display: flex; gap: 30px; padding: 20px; max-width: 1200px; margin: 0 auto; min-height: 500px; align-items: flex-start; }
+    .practice-left { flex: 1; max-width: 400px; background: rgba(0,0,0,0.5); border: 2px solid #6b4f32; padding: 20px; border-radius: 4px; }
+    .practice-heading { font-family: 'Minecraft', monospace; color: #f0e68c; text-align: center; margin-bottom: 30px; font-size: 1.4em; text-shadow: 2px 2px 0 #000; }
+    .difficulty-buttons { display: flex; flex-direction: column; gap: 15px; }
+    .diff-btn { font-family: 'Minecraft', monospace; font-size: 1.2em; padding: 15px; border: 2px solid #8b7355; cursor: pointer; color: #fff; text-shadow: 1px 1px 0 #000; transition: background 0.2s, border-color 0.2s; }
+    .easy-btn { background-color: #2d5a27; } .medium-btn { background-color: #a05a1c; } .hard-btn { background-color: #7a2a2a; }
+    .easy-btn:hover { background-color: #3d7a37; border-color: #f0e68c; }
+    .medium-btn:hover { background-color: #c06a2c; border-color: #f0e68c; }
+    .hard-btn:hover { background-color: #9a3a3a; border-color: #f0e68c; }
+    .practice-right { flex: 2; background: rgba(0,0,0,0.5); border: 2px solid #6b4f32; padding: 20px; border-radius: 4px; }
+    .rating-title { font-family: 'Minecraft', monospace; color: #f0e68c; text-align: center; margin-bottom: 15px; text-shadow: 2px 2px 0 #000; }
+    .rating-table { width: 100%; border-collapse: collapse; font-family: 'Minecraft', monospace; color: #fff; text-shadow: 1px 1px 0 #000; margin-bottom: 15px; }
+    .rating-table th, .rating-table td { border: 1px solid #6b4f32; padding: 8px; text-align: center; }
+    .rating-table th { background-color: #3b2b1f; color: #f0e68c; }
+    .rating-table tr:nth-child(even) { background-color: rgba(107,79,50,0.3); }
+    .rating-note { font-family: 'Minecraft', monospace; font-size: 0.8em; color: #ccc; text-align: center; text-shadow: 1px 1px 0 #000; }
+    .topic-list { list-style: none; padding: 0; margin: 20px 0; font-family: 'Minecraft', monospace; color: #fff; text-shadow: 1px 1px 0 #000; }
+    .topic-list li { padding: 8px 12px; border: 1px solid #6b4f32; margin-bottom: 5px; background: rgba(0,0,0,0.4); cursor: pointer; transition: background 0.2s; }
+    .topic-list li a { color: #fff; text-decoration: none; display: block; }
+    .topic-list li:hover { background: rgba(107,79,50,0.7); }
+</style>
+{% endblock %}

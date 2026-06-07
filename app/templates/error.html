@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-page">
+    <h1>{{ code }}</h1>
+    <p>{{ message }}</p>
+    <a href="/" class="return-btn">Вернуться на главную</a>
+</div>
+
+<style>
+    .error-page {
+        max-width: 600px;
+        margin: 100px auto;
+        text-align: center;
+        font-family: 'Minecraft', monospace;
+        color: #fff;
+        text-shadow: 1px 1px 0 #000;
+    }
+    .error-page h1 { font-size: 4em; color: #f0e68c; }
+    .return-btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: #6b4f32;
+        border: 2px solid #8b7355;
+        color: #f0e68c;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .return-btn:hover { background: #8b7355; }
+</style>
+{% endblock %}
