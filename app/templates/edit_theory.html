@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container theory-page">
+    <h2 class="theory-title">{{ title }}</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="field-wrapper">
+            {{ form.title.label }}
+            {{ form.title(class="auth-input") }}
+            {% for error in form.title.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field-wrapper">
+            {{ form.content.label }}
+            {{ form.content(class="auth-input textarea") }}
+            {% for error in form.content.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field-wrapper">
+            {{ form.order.label }}
+            {{ form.order(class="auth-input") }}
+            {% for error in form.order.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        {{ form.submit(class="auth-btn") }}
+    </form>
+    <a href="/fundamentals/manage" class="btn-back">← Назад к списку</a>
+</div>
+
+<style>
+    .auth-input.textarea { min-height: 200px; resize: vertical; width: 100%; max-width: 800px; }
+    .btn-back { display: inline-block; margin-top: 10px; color: #f0e68c; text-decoration: underline; font-family: 'Minecraft', monospace; }
+</style>
+{% endblock %}

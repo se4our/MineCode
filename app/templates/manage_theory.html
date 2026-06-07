@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container theory-page">
+    <h2 class="theory-title">Управление разделами теории</h2>
+    <a href="/fundamentals/create" class="btn-create">+ Добавить раздел</a>
+    <div class="sections-list">
+        {% for section in sections %}
+        <div class="section-item">
+            <strong>{{ section.title }}</strong> (порядок: {{ section.order }})
+            <div class="actions">
+                <a href="/fundamentals/edit/{{ section.id }}" class="btn-edit">Редактировать</a>
+                <form method="POST" action="/fundamentals/delete/{{ section.id }}" style="display:inline;">
+                    <button type="submit" class="btn-delete" onclick="return confirm('Удалить раздел?')">Удалить</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .btn-create, .btn-edit, .btn-delete { display: inline-block; padding: 5px 10px; margin: 5px; background: #6b4f32; border: 2px solid #8b7355; color: #f0e68c; font-family: 'Minecraft', monospace; text-decoration: none; cursor: pointer; transition: background 0.2s; }
+    .btn-create:hover, .btn-edit:hover, .btn-delete:hover { background: #8b7355; }
+    .sections-list { margin-top: 20px; }
+    .section-item { padding: 10px; border: 1px solid #6b4f32; margin-bottom: 10px; background: rgba(0,0,0,0.5); overflow: hidden; }
+    .section-item .actions { float: right; }
+</style>
+{% endblock %}
