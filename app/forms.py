@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
 from app.models import User
 
@@ -28,5 +28,16 @@ class LoginForm(FlaskForm):
 class TheorySectionForm(FlaskForm):
     title = StringField('Заголовок', validators=[DataRequired(), Length(max=200)])
     content = TextAreaField('Содержание', validators=[DataRequired()])
+    order = IntegerField('Порядок', default=0)
+    submit = SubmitField('Сохранить')
+
+class QuestionForm(FlaskForm):
+    topic = StringField('Тема', validators=[DataRequired(), Length(max=100)])
+    difficulty = SelectField('Сложность', choices=[('easy', 'Лёгкая'), ('medium', 'Средняя'), ('hard', 'Сложная')], validators=[DataRequired()])
+    type = SelectField('Тип вопроса', choices=[('theory', 'Теоретический'), ('practice', 'Практический')], validators=[DataRequired()])
+    question_text = TextAreaField('Текст вопроса', validators=[DataRequired()])
+    options = TextAreaField('Варианты ответов (для теории: по одному на строку, правильный отметьте звёздочкой *)')
+    correct_answer = StringField('Правильный ответ (для практики: строка или несколько вариантов через запятую)', validators=[DataRequired()])
+    explanation = TextAreaField('Пояснение')
     order = IntegerField('Порядок', default=0)
     submit = SubmitField('Сохранить')
