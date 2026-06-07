@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container theory-page">
+    <h2 class="theory-title">Управление вопросами тестов</h2>
+    <div class="manage-layout">
+        <div class="manage-panel difficulties-panel">
+            <h3>Сложность</h3>
+            <ul id="difficultyList">
+                <li data-difficulty="easy">Лёгкие</li>
+                <li data-difficulty="medium">Средние</li>
+                <li data-difficulty="hard">Сложные</li>
+            </ul>
+        </div>
+        <div class="manage-panel topics-panel">
+            <h3>Темы</h3>
+            <ul id="topicList"></ul>
+        </div>
+        <div class="manage-panel questions-panel">
+            <h3>Вопросы</h3>
+            <div id="questionsList"></div>
+        </div>
+    </div>
+    <a href="/practice/create" class="btn-create">+ Добавить вопрос</a>
+</div>
+<script>
+    const difficultyList = document.getElementById('difficultyList');
+    const topicList = document.getElementById('topicList');
+    const questionsList = document.getElementById('questionsList');
+
+    difficultyList.addEventListener('click', async (e) => {
+        if (e.target.tagName === 'LI') {
+            const diff = e.target.dataset.difficulty;
+            // загружаем темы
+            const resp = await fetch(`/api/topics_by_difficulty?difficulty=${diff}`);
+            const topics = await resp.json();
+            topicList.innerHTML = topics.map(t => `<li data-topic="${t}">${t}</li>`).join('');
+            questionsList.innerHTML = '';
+        }
+    });
+
+    topicList.addEventListener('click', async (e) => {
+        if (e.target.tagName === 'LI') {
+            const topic = e.target.dataset.topic;
+            const diff = document.querySelector('#difficultyList li.active')?.dataset.difficulty;
+            if (!diff) return;
+            const resp = await fetch(`/api/manage/questions?topic=${encodeURIComponent(topic)}&difficulty=${diff}`);
+            const questions = await resp.json();
+            renderQuestions(questions);
+        }
+    });
+
+    function renderQuestions(questions) {
+        if (questions.length === 0) {
+            questionsList.innerHTML = '<p>Нет вопросов</p>';
+            return;
+        }
+        let html = '<ul>';
+        questions.forEach(q => {
+            html += `<li>
+                <strong>${q.type === 'theory' ? 'Теория' : 'Практика'}:</strong> ${q.question_text}
+                <div class="actions">
+                    <a href="/practice/edit/${q.id}" class="btn-edit">Ред.</a>
+                    <button class="btn-delete" data-id="${q.id}">Удалить</button>
+                </div>
+            </li>`;
+        });
+        html += '</ul>';
+        questionsList.innerHTML = html;
+        // Добавить обработчики удаления
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (confirm('Удалить вопрос?')) {
+                    const id = btn.dataset.id;
+                    await fetch(`/practice/delete/${id}`, { method: 'POST' });
+                    // перезагрузить список вопросов для текущей темы и сложности
+                    topicList.querySelector('li.active')?.click();
+                }
+            });
+        });
+    }
+
+    // подсветка активного элемента
+    difficultyList.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LI') {
+            difficultyList.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+            e.target.classList.add('active');
+        }
+    });
+    topicList.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LI') {
+            topicList.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+            e.target.classList.add('active');
+        }
+    });
+</script>
+<style>
+    .manage-layout { display: flex; gap: 20px; }
+    .manage-panel { flex: 1; background: rgba(0,0,0,0.5); padding: 15px; border: 1px solid #6b4f32; }
+    .manage-panel h3 { text-align: center; color: #f0e68c; margin-bottom: 15px; }
+    .manage-panel ul { list-style: none; padding: 0; }
+    .manage-panel li { padding: 8px 12px; margin-bottom: 5px; background: rgba(107,79,50,0.5); cursor: pointer; transition: background 0.2s; }
+    .manage-panel li:hover, .manage-panel li.active { background: #8b7355; }
+    .actions { margin-top: 5px; }
+    .btn-edit, .btn-delete { font-size: 0.8em; padding: 2px 8px; margin-left: 5px; }
+    .btn-create { margin-top: 20px; display: inline-block; }
+</style>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container theory-page">
+    <h2 class="theory-title">{{ title }}</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="field-wrapper">
+            {{ form.topic.label }}<br>
+            {{ form.topic(class="auth-input") }}
+            {% for error in form.topic.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field-wrapper">
+            {{ form.difficulty.label }}<br>
+            {{ form.difficulty(class="auth-input") }}
+        </div>
+        <div class="field-wrapper">
+            {{ form.type.label }}<br>
+            {{ form.type(class="auth-input") }}
+        </div>
+        <div class="field-wrapper">
+            {{ form.question_text.label }}<br>
+            {{ form.question_text(class="auth-input textarea") }}
+            {% for error in form.question_text.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field-wrapper">
+            {{ form.options.label }}<br>
+            <small>Для теоретических вопросов: каждый вариант с новой строки, правильный отметьте * в начале (например, "*Вариант 3")</small><br>
+            {{ form.options(class="auth-input textarea") }}
+        </div>
+        <div class="field-wrapper">
+            {{ form.correct_answer.label }}<br>
+            <small>Для теории: номер правильного варианта (0,1,2...). Для практики: если несколько пропусков – сегменты через пробел (например: @e distance); если один пропуск и допустимых вариантов несколько – укажите один вариант здесь.</small><br>
+            {{ form.correct_answer(class="auth-input") }}
+            {% for error in form.correct_answer.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="field-wrapper">
+            {{ form.explanation.label }}<br>
+            {{ form.explanation(class="auth-input textarea") }}
+        </div>
+        <div class="field-wrapper">
+            {{ form.order.label }}<br>
+            {{ form.order(class="auth-input") }}
+        </div>
+        {{ form.submit(class="auth-btn") }}
+    </form>
+    <a href="/practice/manage" class="btn-back">← Назад к списку</a>
+</div>
+
+<style>
+    .auth-input.textarea { min-height: 100px; resize: vertical; width: 100%; max-width: 800px; }
+    .btn-back { display: inline-block; margin-top: 10px; color: #f0e68c; text-decoration: underline; font-family: 'Minecraft', monospace; }
+    small { color: #ccc; font-size: 0.75em; }
+</style>
+{% endblock %}
