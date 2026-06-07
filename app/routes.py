@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
-from app.models import User, TestResult, TheorySection
+from app.models import User, TestResult, TheorySection, Question
 from app import db
-from app.forms import RegistrationForm, LoginForm, TheorySectionForm
+from app.forms import RegistrationForm, LoginForm, TheorySectionForm, QuestionForm
 from functools import wraps
 
 main = Blueprint('main', __name__)
@@ -32,6 +32,18 @@ def fundamentals():
 @main.route('/theory')
 def theory():
     return render_template('theory.html', title='Справочник команд', body_class='theory-bg')
+
+# Практика (тесты)
+@main.route('/practice')
+def practice():
+    return render_template('practice.html', title='Практические тесты', body_class='theory-bg')
+
+# Страница теста
+@main.route('/test')
+def test():
+    topic = request.args.get('topic', 'Неизвестная тема')
+    difficulty = request.args.get('difficulty', 'easy')
+    return render_template('test.html', title=f'Тест: {topic}', topic=topic, difficulty=difficulty, body_class='theory-bg')
 
 # Регистрация / вход
 @main.route('/auth')
@@ -68,6 +80,11 @@ def login():
         flash('Неверный логин или пароль', 'error')
     reg_form = RegistrationForm()
     return render_template('auth.html', title='Вход / Регистрация', body_class='theory-bg', reg_form=reg_form, login_form=form)
+
+@main.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', title='Профиль', body_class='theory-bg')
 
 @main.route('/logout')
 @login_required
@@ -117,6 +134,103 @@ def delete_theory(id):
     db.session.commit()
     flash('Раздел удалён', 'success')
     return redirect(url_for('main.manage_theory'))
+
+# Управление вопросами тестов (только админ)
+@main.route('/practice/manage')
+@admin_required
+def manage_practice():
+    return render_template('manage_practice.html', title='Управление вопросами', body_class='theory-bg')
+
+@main.route('/practice/create', methods=['GET', 'POST'])
+@admin_required
+def create_question():
+    form = QuestionForm()
+    if form.validate_on_submit():
+        question = Question(
+            topic=form.topic.data,
+            difficulty=form.difficulty.data,
+            type=form.type.data,
+            question_text=form.question_text.data,
+            options=form.options.data,
+            correct_answer=form.correct_answer.data,
+            explanation=form.explanation.data,
+            order=form.order.data
+        )
+        db.session.add(question)
+        db.session.commit()
+        flash('Вопрос создан', 'success')
+        return redirect(url_for('main.manage_practice'))
+    return render_template('edit_question.html', title='Новый вопрос', body_class='theory-bg', form=form)
+
+@main.route('/practice/edit/<int:id>', methods=['GET', 'POST'])
+@admin_required
+def edit_question(id):
+    question = Question.query.get_or_404(id)
+    form = QuestionForm(obj=question)
+    if form.validate_on_submit():
+        form.populate_obj(question)
+        db.session.commit()
+        flash('Вопрос обновлён', 'success')
+        return redirect(url_for('main.manage_practice'))
+    return render_template('edit_question.html', title='Редактировать вопрос', body_class='theory-bg', form=form)
+
+@main.route('/practice/delete/<int:id>', methods=['POST'])
+@admin_required
+def delete_question(id):
+    question = Question.query.get_or_404(id)
+    db.session.delete(question)
+    db.session.commit()
+    flash('Вопрос удалён', 'success')
+    return redirect(url_for('main.manage_practice'))
+
+@main.route('/api/questions')
+def api_questions():
+    topic = request.args.get('topic')
+    difficulty = request.args.get('difficulty')
+    questions = Question.query.filter_by(topic=topic, difficulty=difficulty).order_by(Question.order).all()
+    if not questions:
+        return jsonify([])
+    result = []
+    for q in questions:
+        item = {
+            'type': q.type,
+            'question': q.question_text,
+            'options': q.options.split('\n') if q.options else [],
+            'correct': int(q.correct_answer) if q.type == 'theory' else q.correct_answer,
+            'explanation': q.explanation or ''
+        }
+        result.append(item)
+    return jsonify(result)
+
+@main.route('/api/topics_by_difficulty')
+@admin_required
+def api_topics_by_difficulty():
+    difficulty = request.args.get('difficulty')
+    if not difficulty:
+        return jsonify([])
+    topics = db.session.query(Question.topic).filter_by(difficulty=difficulty).distinct().all()
+    return jsonify([t[0] for t in topics])
+
+@main.route('/api/manage/questions')
+@admin_required
+def api_manage_questions():
+    topic = request.args.get('topic')
+    difficulty = request.args.get('difficulty')
+    if not topic or not difficulty:
+        return jsonify([])
+    questions = Question.query.filter_by(topic=topic, difficulty=difficulty).order_by(Question.order).all()
+    result = []
+    for q in questions:
+        result.append({
+            'id': q.id,
+            'type': q.type,
+            'question_text': q.question_text,
+            'options': q.options,
+            'correct_answer': q.correct_answer,
+            'explanation': q.explanation,
+            'order': q.order
+        })
+    return jsonify(result)
 
 # API эндпоинт рейтинга (заглушка)
 @main.route('/api/rating')
