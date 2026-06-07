@@ -460,3 +460,48 @@ body.theory-bg {
     transition: background 0.2s;
 }
 .return-btn:hover { background: #8b7355; }
+/* Выпадающее меню пользователя в шапке */
+.user-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.user-dropdown-btn {
+    background: rgba(83, 68, 57, 0.9);
+    border: 1px solid #6b4f32;
+    color: #ffffff;
+    font-family: 'Minecraft', monospace;
+    font-size: 14px;
+    padding: 6px 12px;
+    cursor: pointer;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.user-dropdown-btn:hover {
+    background-color: rgba(139, 115, 85, 1);
+}
+.user-dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid #6b4f32;
+    min-width: 120px;
+    z-index: 101;
+}
+.user-dropdown-menu.show {
+    display: block;
+}
+.user-dropdown-menu a {
+    display: block;
+    padding: 8px 14px;
+    color: #ffffff;
+    text-decoration: none;
+    font-family: 'Minecraft', monospace;
+    font-size: 12px;
+    border-bottom: 1px solid #3b2b1f;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+.user-dropdown-menu a:hover {
+    background: rgba(107, 79, 50, 0.8);
+    color: #f0e68c;
+}
