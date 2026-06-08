@@ -19,7 +19,7 @@ class User(UserMixin, db.Model):
 
 class TestResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    score = db.Column(db.Integer, nullable=False)
+    score = db.Column(db.Float, nullable=False)
     total = db.Column(db.Integer, nullable=False)
     topic = db.Column(db.String(100))
     difficulty = db.Column(db.String(20))
