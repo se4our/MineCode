@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User, TestResult, TheorySection, Question
 from app import db
+from sqlalchemy import func, desc, asc
 from app.forms import RegistrationForm, LoginForm, TheorySectionForm, QuestionForm
 from functools import wraps
 
@@ -232,14 +233,61 @@ def api_manage_questions():
         })
     return jsonify(result)
 
-# API эндпоинт рейтинга (заглушка)
+# Сохранение результата теста (только для авторизованных)
+@main.route('/api/save_result', methods=['POST'])
+@login_required
+def save_result():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Нет данных'}), 400
+
+    score = data.get('score')
+    total = data.get('total')
+    topic = data.get('topic')
+    difficulty = data.get('difficulty')
+
+    if score is None or total is None or not topic or not difficulty:
+        return jsonify({'error': 'Неполные данные'}), 400
+
+    result = TestResult(
+        score=score,
+        total=total,
+        topic=topic,
+        difficulty=difficulty,
+        user_id=current_user.id
+    )
+    db.session.add(result)
+    db.session.commit()
+    return jsonify({'message': 'Результат сохранён'}), 201
+
+# Глобальный рейтинг (топ-10)
 @main.route('/api/rating')
 def api_rating():
-    data = [
-        {"place": 1, "player": "Steve", "score": 42.5},
-        {"place": 2, "player": "Alex", "score": 38.0},
-        {"place": 3, "player": "Notch", "score": 35.5},
-    ]
+    # Подзапрос: лучший результат пользователя по каждой теме
+    best_per_topic = db.session.query(
+        TestResult.user_id,
+        TestResult.topic,
+        func.max(TestResult.score).label('max_score'),
+        func.max(TestResult.timestamp).label('last_best_timestamp')
+    ).group_by(TestResult.user_id, TestResult.topic).subquery()
+
+    # Суммируем лучшие результаты по темам и находим дату последнего улучшения
+    results = db.session.query(
+        User.username,
+        func.sum(best_per_topic.c.max_score).label('total_score'),
+        func.max(best_per_topic.c.last_best_timestamp).label('last_improvement')
+    ).join(best_per_topic, User.id == best_per_topic.c.user_id) \
+     .group_by(User.id) \
+     .order_by(desc('total_score'), asc('last_improvement')) \
+     .limit(10).all()
+
+    data = []
+    for idx, row in enumerate(results):
+        data.append({
+            "place": idx + 1,
+            "player": row.username,
+            "score": row.total_score
+        })
     return jsonify(data)
 
 # Страницы ошибок
