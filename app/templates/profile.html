@@ -23,7 +23,35 @@
                 <span class="info-value">{{ current_user.id }}</span>
             </div>
         </div>
-        
+
+        <div class="profile-results">
+            <h3>Результаты тестов</h3>
+            {% if current_user.test_results %}
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Тема</th>
+                        <th>Сложность</th>
+                        <th>Баллы</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in current_user.test_results|sort(attribute='timestamp', reverse=True) %}
+                    <tr>
+                        <td>{{ result.topic }}</td>
+                        <td>{{ result.difficulty }}</td>
+                        <td>{{ result.score }}</td>
+                        <td>{{ result.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Вы ещё не проходили тесты. <a href="/practice">Пройти тест</a></p>
+            {% endif %}
+        </div>
+
         <div class="profile-actions">
             <a href="{{ url_for('main.index') }}" class="btn-back">🏠 На главную</a>
             <a href="{{ url_for('main.logout') }}" class="btn-logout">🚪 Выйти</a>
@@ -59,6 +87,37 @@
 }
 .info-value {
     color: #ffffff;
+}
+.profile-results {
+    margin-top: 25px;
+    background: rgba(0,0,0,0.5);
+    padding: 15px;
+    border: 1px solid #6b4f32;
+}
+.profile-results h3 {
+    text-align: center;
+    color: #f0e68c;
+    margin-bottom: 15px;
+}
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: rgba(0,0,0,0.3);
+}
+.results-table th, .results-table td {
+    border: 1px solid #6b4f32;
+    padding: 8px;
+    text-align: center;
+    font-size: 0.8em;
+}
+.results-table th {
+    background: #3b2b1f;
+    color: #f0e68c;
+}
+.profile-results a {
+    color: #f0e68c;
+    text-decoration: underline;
 }
 .profile-actions {
     display: flex;

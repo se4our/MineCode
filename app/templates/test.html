@@ -99,6 +99,7 @@
     };
 
     // Получаем тему и сложность из URL
+    const isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
     const urlParams = new URLSearchParams(window.location.search);
     const topic = urlParams.get('topic') || 'Игровые правила и базовые команды';
     const difficulty = urlParams.get('difficulty') || 'easy';
@@ -182,10 +183,22 @@
 
     // ================== ВЫБОР ВОПРОСОВ ==================
     function selectQuestions() {
-        const theory = questionPool.filter(q => q.type === 'theory');
-        const practice = questionPool.filter(q => q.type === 'practice');
-        const shuffledTheory = theory.sort(() => Math.random() - 0.5).slice(0, 3);
-        const shuffledPractice = practice.sort(() => Math.random() - 0.5).slice(0, 2);
+        let numTheory, numPractice;
+        if (difficulty === 'easy') {
+            numTheory = 3; numPractice = 2;
+        } else if (difficulty === 'medium') {
+            numTheory = 6; numPractice = 4;
+        } else if (difficulty === 'hard') {
+            numTheory = 9; numPractice = 6;
+        } else { // fallback
+            numTheory = 3; numPractice = 2;
+        }
+
+        const theoryPool = questionPool.filter(q => q.type === 'theory');
+        const practicePool = questionPool.filter(q => q.type === 'practice');
+
+        const shuffledTheory = theoryPool.sort(() => Math.random() - 0.5).slice(0, numTheory);
+        const shuffledPractice = practicePool.sort(() => Math.random() - 0.5).slice(0, numPractice);
         const randomizedTheory = shuffledTheory.map(q => shuffleOptions(q));
         currentQuestions = [...randomizedTheory, ...shuffledPractice].sort(() => Math.random() - 0.5);
         userAnswers = new Array(currentQuestions.length).fill(null);
@@ -263,7 +276,9 @@
         sessionStorage.removeItem('testState');
         enableNavigation();
 
-        let score = 0;
+        let totalCorrect = 0;
+        let theoryCorrect = 0;
+
         const results = currentQuestions.map((q, i) => {
             let correct = false;
             if (q.type === 'theory') {
@@ -272,25 +287,61 @@
                 const ans = userAnswers[i] ? userAnswers[i].trim().toLowerCase() : '';
                 const ref = q.correct_answer;
                 if (Array.isArray(ref)) {
-                    // Одиночный сегмент (возможно с пробелами) — массив допустимых вариантов
                     correct = ref.some(a => a.toLowerCase() === ans);
                 } else {
-                    // Несколько сегментов, разделённых пробелами
                     const userParts = ans.split(/\s+/);
                     const correctParts = ref.trim().toLowerCase().split(/\s+/);
-                    correct = userParts.length === correctParts.length && userParts.every((part, idx) => part === correctParts[idx]);
+                    correct = userParts.length === correctParts.length &&
+                              userParts.every((part, idx) => part === correctParts[idx]);
                 }
             }
-            if (correct) score += 1;
+            if (correct) {
+                totalCorrect++;
+                if (q.type === 'theory') theoryCorrect++;
+            }
             return { question: q, userAnswer: userAnswers[i], correct };
         });
 
+        // Подсчёт бонуса
+        let bonus = 0;
+        const totalQ = currentQuestions.length;
+        if (difficulty === 'easy') {
+            if (totalCorrect === totalQ) bonus = 1;
+        } else if (difficulty === 'medium') {
+            if (totalCorrect === totalQ) bonus = 2;
+            else if (totalCorrect >= totalQ / 2) bonus = 1;
+        } else if (difficulty === 'hard') {
+            if (totalCorrect === totalQ) bonus = 3;
+            else if (totalCorrect >= totalQ * 2 / 3) bonus = 2;
+            else if (totalCorrect >= totalQ * 1 / 3) bonus = 1;
+        }
+
+        const finalScore = theoryCorrect * 0.5 + bonus;
+
+        // Сохранение результата (отправляем finalScore)
+        if (isAuthenticated) {
+            fetch('/api/save_result', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    score: finalScore,
+                    total: totalQ,
+                    topic: topic,
+                    difficulty: difficulty
+                })
+            }).then(res => res.json())
+              .then(data => console.log('Результат сохранен:', data))
+              .catch(err => console.error('Ошибка сохранения:', err));
+        }
+
+        // В отображении результатов можно показать набранные баллы
         const container = document.querySelector('.test-container');
         container.innerHTML = `
             <h2>Результаты теста</h2>
             <div class="result-layout">
                 <div class="result-summary">
-                    <p>Вы набрали ${score} из ${currentQuestions.length} баллов</p>
+                    <p>Вы набрали ${finalScore} баллов</p>
+                    <p>Правильных ответов: ${totalCorrect} из ${totalQ}</p>
                     <p>Времени оставалось: ${document.getElementById('timerDisplay').textContent}</p>
                     <p><a href="/practice" class="return-btn">← Вернуться к темам</a></p>
                 </div>
@@ -330,7 +381,6 @@
             </div>
         `;
     }
-
     // ================== БЛОКИРОВКА НАВИГАЦИИ ==================
     function disableNavigation() {
         document.querySelectorAll('.navbar a').forEach(link => {
