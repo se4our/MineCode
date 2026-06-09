@@ -505,3 +505,18 @@ body.theory-bg {
     background: rgba(107, 79, 50, 0.8);
     color: #f0e68c;
 }
+.flash-messages {
+    max-width: 800px;
+    margin: 10px auto;
+    padding: 0 20px;
+}
+.flash-message {
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid;
+    font-family: 'Minecraft', monospace;
+    text-shadow: 1px 1px 0 #000;
+}
+.flash-success { background: #2d5a27; border-color: #4caf50; color: #fff; }
+.flash-error { background: #7a2a2a; border-color: #f44336; color: #fff; }
+.flash-info { background: #1565c0; border-color: #2196f3; color: #fff; }
